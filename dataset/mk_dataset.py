@@ -24,7 +24,7 @@ def mk_dataset(
             preprocess.preprocess_image,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
-        .batch(1)
+        # .batch(1)
     )
 
     # * map paths
@@ -39,7 +39,7 @@ def mk_dataset(
             preprocess.preprocess_image,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
-        .batch(1)
+        # .batch(1)
     )
 
     # * zipped ds
@@ -48,18 +48,19 @@ def mk_dataset(
     )
     # * apply cutmix
     sat_map_cum = (
-        sat_map.repeat()
-        .map(
-            preprocess.Augment(),
-            num_parallel_calls=tf.data.AUTOTUNE,
-        )
-        .unbatch()
+        sat_map
+        # .map(
+        #     preprocess.Augment(),
+        #     num_parallel_calls=tf.data.AUTOTUNE,
+        # )
+        # .unbatch()
         .batch(config.NB_MIX)
         .map(
             cutmix.cutmix_batch,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
         .unbatch()
+        .repeat()
         .batch(batch_size)
         .prefetch(buffer_size=tf.data.AUTOTUNE)
     )
