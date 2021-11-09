@@ -121,8 +121,8 @@ def cutmix_batch(*ds):
 
     inp = inp_batch[0]
     tar = tar_batch[0]
-    res_inp_batch = inp_batch
-    res_tar_batch = tar_batch
+    res_inp_batch = tf.zeros_like(inp_batch)
+    res_tar_batch = tf.zeros_like(tar_batch)
     for base_idx in tf.range(len(inp_batch)):
         inp = inp_batch[base_idx]
         tar = tar_batch[base_idx]
@@ -133,10 +133,7 @@ def cutmix_batch(*ds):
 
             # 入力
             inp_patch = inp_batch[patch_idx]
-            ## パッチ切り出し(cut)
-            ## マスク作成
             inp_mask = mkmask(bbox, config.IMG_CH)
-            ## 合成(mix)
             inp = inp * (1 - inp_mask) + inp_patch * inp_mask
 
             # ターゲット

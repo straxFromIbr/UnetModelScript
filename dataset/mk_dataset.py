@@ -4,7 +4,7 @@ import tensorflow as tf
 
 import config
 from . import cutmix
-from . import utils
+from . import preprocess
 
 
 def mk_dataset(
@@ -17,11 +17,11 @@ def mk_dataset(
     # ** sat images
     sat_dataset = (
         sat_path_list.map(
-            utils.load_image,
+            preprocess.load_image,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
         .map(
-            utils.preprocess_image,
+            preprocess.preprocess_image,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
         .batch(1)
@@ -32,11 +32,11 @@ def mk_dataset(
     # * param myParam
     map_dataset = (
         map_path_list.map(
-            utils.load_image_gray,
+            preprocess.load_image_gray,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
         .map(
-            utils.preprocess_image_map,
+            preprocess.preprocess_image,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
         .batch(1)
@@ -48,12 +48,12 @@ def mk_dataset(
     )
     # * apply cutmix
     sat_map_cum = (
-        sat_map.map(
-            utils.Augment(),
+        sat_map.repeat()
+        .map(
+            preprocess.Augment(),
             num_parallel_calls=tf.data.AUTOTUNE,
         )
         .unbatch()
-        .repeat()
         .batch(config.NB_MIX)
         .map(
             cutmix.cutmix_batch,

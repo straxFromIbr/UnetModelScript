@@ -1,11 +1,8 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
-from IPython.display import clear_output
 from tensorflow.keras.layers.experimental import preprocessing as tf_preprocessing
 
-from config import *
+import config
 
 
 def load_image(image):
@@ -54,13 +51,13 @@ def normalize_map(input_image):
 
 
 def preprocess_image(image):
-    image = resize(image, IMG_HEIGHT, IMG_WIDTH)
+    image = resize(image, config.IMG_HEIGHT, config.IMG_WIDTH)
     image = normalize(image)
     return image
 
 
 def preprocess_image_map(image):
-    image = resize(image, IMG_HEIGHT, IMG_WIDTH)
+    image = resize(image, config.IMG_HEIGHT, config.IMG_WIDTH)
     image = normalize_map(image)
     return image
 
@@ -80,4 +77,3 @@ class Augment(keras.layers.Layer):
         inputs = self.augment_inputs(inputs)
         labels = self.augment_labels(labels)
         return inputs, labels
-
