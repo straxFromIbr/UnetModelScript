@@ -7,6 +7,10 @@ from . import utils
 def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
     inputs = tf.keras.layers.Input(shape=input_shape)
 
+    # initializer = tf.random_normal_initializer(0.0, 0.02)
+    x = inputs
+
+    # Downsampling through the model
     down_stack = [
         utils.downsample(64, 4, apply_batchnorm=False),  # (batch_size, 128, 128, 64)
         utils.downsample(128, 4),  # (batch_size, 64, 64, 128)
@@ -17,7 +21,14 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
         utils.downsample(512, 4),  # (batch_size, 2, 2, 512)
         utils.downsample(512, 4),  # (batch_size, 1, 1, 512)
     ]
+    skips = []
+    for down in down_stack:
+        x = down(x)
+        skips.append(x)
 
+    skips = reversed(skips[:-1])
+
+    # Upsampling and establishing the skip connections
     up_stack = [
         utils.upsample(512, 4, apply_dropout=True),  # (batch_size, 2, 2, 1024)
         utils.upsample(512, 4, apply_dropout=True),  # (batch_size, 4, 4, 1024)
@@ -28,23 +39,20 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
         utils.upsample(64, 4),  # (batch_size, 128, 128, 128)
     ]
 
-    # initializer = tf.random_normal_initializer(0.0, 0.02)
-    x = inputs
-
-    # Downsampling through the model
-    skips = []
-    for down in down_stack:
-        x = down(x)
-        skips.append(x)
-
-    skips = reversed(skips[:-1])
-
-    # Upsampling and establishing the skip connections
     for up, skip in zip(up_stack, skips):
         x = up(x)
         concat_l = keras.layers.Concatenate()
         x = concat_l([x, skip])
 
+    # laststacks
+    last_stacks = [
+        keras.layers.Conv2D(64, (3, 3), padding="same"),
+        keras.layers.Activation("relu"),
+        keras.layers.Conv2D(64, (3, 3), padding="same"),
+        keras.layers.BatchNormalization(axis=3),
+        keras.layers.Activation("relu"),
+        keras.layers.Conv2D(output_channels, (1, 1), activation="sigmoid"),
+    ]
     last = keras.layers.Conv2DTranspose(
         filters=output_channels,
         kernel_size=3,
@@ -54,6 +62,8 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
         # activation="tanh",
     )
     x = last(x)
+    for layer in last_stacks:
+        x = layer(x)
     return tf.keras.Model(inputs=inputs, outputs=x)
 
 
