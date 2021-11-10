@@ -1,11 +1,11 @@
-import matplotlib.pyplot as plt
 import datetime
+
+import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras as keras
+from IPython.display import clear_output
 
 from .display import create_mask
-
-from IPython.display import clear_output
 
 
 class DisplayCallback(keras.callbacks.Callback):
@@ -28,7 +28,7 @@ class DisplayCallback(keras.callbacks.Callback):
         print("\nSample Prediction after epoch {}\n".format(epoch + 1))
 
 
-def get_tb_callback(log_dir):
+def get_tboard_callback(log_dir):
     tensorboard_callback = keras.callbacks.TensorBoard(
         log_dir=log_dir,
         histogram_freq=1,
@@ -36,7 +36,7 @@ def get_tb_callback(log_dir):
     return tensorboard_callback
 
 
-def get_cp_callback(checkpoint_dir):
+def get_checkpoint_callback(checkpoint_dir):
     # チェックポイントコールバックを作る
     cp_callback = keras.callbacks.ModelCheckpoint(
         checkpoint_dir,
