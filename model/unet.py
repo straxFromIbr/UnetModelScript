@@ -44,26 +44,26 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
         concat_l = keras.layers.Concatenate()
         x = concat_l([x, skip])
 
-    # laststacks
-    last_stacks = [
-        keras.layers.Conv2D(64, (3, 3), padding="same"),
-        keras.layers.Activation("relu"),
-        keras.layers.Conv2D(64, (3, 3), padding="same"),
-        keras.layers.BatchNormalization(axis=3),
-        keras.layers.Activation("relu"),
-        keras.layers.Conv2D(output_channels, (1, 1), activation="sigmoid"),
-    ]
+    # # laststacks
+    # last_stacks = [
+    #     keras.layers.Conv2D(64, (3, 3), padding="same"),
+    #     keras.layers.Activation("relu"),
+    #     keras.layers.Conv2D(64, (3, 3), padding="same"),
+    #     keras.layers.BatchNormalization(axis=3),
+    #     keras.layers.Activation("relu"),
+    #     keras.layers.Conv2D(output_channels, (1, 1), activation="sigmoid"),
+    # ]
     last = keras.layers.Conv2DTranspose(
         filters=output_channels,
         kernel_size=3,
         strides=2,
         padding="same",
         # kernel_initializer=initializer,
-        # activation="tanh",
+        activation="sigmoid",
     )
     x = last(x)
-    for layer in last_stacks:
-        x = layer(x)
+    # for layer in last_stacks:
+    #     x = layer(x)
     return tf.keras.Model(inputs=inputs, outputs=x)
 
 
