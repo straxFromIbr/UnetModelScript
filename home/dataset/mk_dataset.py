@@ -3,8 +3,8 @@ import pathlib
 import tensorflow as tf
 
 import config
-from . import cutmix
-from . import preprocess
+
+from . import cutmix, preprocess
 
 
 def mk_dataset(
@@ -19,8 +19,7 @@ def mk_dataset(
         sat_path_list.map(
             preprocess.load_image,
             num_parallel_calls=tf.data.AUTOTUNE,
-        )
-        .map(
+        ).map(
             preprocess.preprocess_image,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
@@ -34,8 +33,7 @@ def mk_dataset(
         map_path_list.map(
             preprocess.load_image_gray,
             num_parallel_calls=tf.data.AUTOTUNE,
-        )
-        .map(
+        ).map(
             preprocess.preprocess_image,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
