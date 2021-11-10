@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import datetime
 import tensorflow as tf
 import tensorflow.keras as keras
 
@@ -16,7 +17,7 @@ class DisplayCallback(keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         clear_output(wait=True)
-        pred_mask = create_mask(self.model.predict(self.sample_inp[tf.newaxis, ...]))
+        # pred_mask = create_mask(self.model.predict(self.sample_inp[tf.newaxis, ...]))
         pred = self.model.predict(self.sample_inp[tf.newaxis, ...])
         plt.imshow(keras.preprocessing.image.array_to_img(self.sample_inp))
         plt.show()
@@ -25,3 +26,21 @@ class DisplayCallback(keras.callbacks.Callback):
         plt.imshow(keras.preprocessing.image.array_to_img(self.sample_tar))
         plt.show()
         print("\nSample Prediction after epoch {}\n".format(epoch + 1))
+
+
+def get_tb_callback(log_dir):
+    tensorboard_callback = keras.callbacks.TensorBoard(
+        log_dir=log_dir,
+        histogram_freq=1,
+    )
+    return tensorboard_callback
+
+
+def get_cp_callback(checkpoint_dir):
+    # チェックポイントコールバックを作る
+    cp_callback = keras.callbacks.ModelCheckpoint(
+        checkpoint_dir,
+        save_weights_only=True,
+        verbose=1,
+    )
+    return cp_callback
