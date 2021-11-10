@@ -1,7 +1,5 @@
 import pathlib
 
-USE_IMGNET = True
-
 BUFFER_SIZE = 400
 BATCH_SIZE = 64
 # Each image is 224x224 in size
@@ -17,25 +15,28 @@ IMG_CH = 3
 OUT_CH = 1
 OUTPUT_CLASSES = 2
 
-NB_MIX = 7
+NB_MIX = 4
 
-#PATH = pathlib.Path("../Datasets/datasets_21110115")
-PATH = pathlib.Path("/datasets")
-TR_SAT_PATH = PATH / "sat"
-TR_MAP_PATH = PATH / "map"
-assert PATH.exists() and TR_SAT_PATH.exists() and TR_MAP_PATH.exists()
+# basepath = pathlib.Path("../Datasets/datasets_21110115")
+basepath = pathlib.Path("/datasets")
+TR_SAT_PATH = basepath / "sat"
+TR_MAP_PATH = basepath / "map"
 
-VA_SAT_PATH = PATH / "valid/sat"
-VA_MAP_PATH = PATH / "valid/map"
-assert VA_SAT_PATH.exists() and VA_MAP_PATH.exists()
+VA_SAT_PATH = basepath / "valid/sat"
+VA_MAP_PATH = basepath / "valid/map"
 
 EPOCHS = 20
-VAL_SUBSPLITS = 5
-TRAIN_LENGTH = len(list(TR_SAT_PATH.glob("*.png")))
-VAR_LENGTH = len(list(VA_SAT_PATH.glob("*.png")))
+_train_length = len(list(TR_SAT_PATH.glob("*.png")))
+_var_length = len(list(VA_SAT_PATH.glob("*.png")))
 
-STEPS_PER_EPOCH = TRAIN_LENGTH // BATCH_SIZE
+STEPS_PER_EPOCH = _train_length // BATCH_SIZE
 
 EPOCHS = 20
-VAL_SUBSPLITS = 5
-VALIDATION_STEPS = VAR_LENGTH // BATCH_SIZE // VAL_SUBSPLITS
+__val_subsplits = 5
+VALIDATION_STEPS = _var_length // BATCH_SIZE // __val_subsplits
+
+
+# Config for saving path
+MODEL_SAVE_PATH = pathlib.Path("./savedmodel")
+CHECKPOINT_PATH = pathlib.Path("./checkpoint")
+LOG_PATH = pathlib.Path("./log")
