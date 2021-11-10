@@ -17,9 +17,10 @@ class DisplayCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         clear_output(wait=True)
         pred_mask = create_mask(self.model.predict(self.sample_inp[tf.newaxis, ...]))
+        pred = self.model.predict(self.sample_inp[tf.newaxis, ...])
         plt.imshow(keras.preprocessing.image.array_to_img(self.sample_inp))
         plt.show()
-        plt.imshow(keras.preprocessing.image.array_to_img(pred_mask))
+        plt.imshow(keras.preprocessing.image.array_to_img(pred[0]))
         plt.show()
         plt.imshow(keras.preprocessing.image.array_to_img(self.sample_tar))
         plt.show()
