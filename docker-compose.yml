@@ -1,0 +1,13 @@
+version: "3.3"
+services:
+  devs:
+    ports:
+      - "8888:8888"
+    volumes:
+      - "./home:/home"
+    image: jupyterlab_tf
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
