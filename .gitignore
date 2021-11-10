@@ -4,3 +4,4 @@
 logs/
 checkpoint/
 savedmodel*
+home/.ipynb_checkpoints/
