@@ -2,6 +2,7 @@
 *.pyc
 *.pyo
 logs/
-checkpoint/
+checkpoints/
 savedmodel*
 home/.ipynb_checkpoints/
+home/.vscode/

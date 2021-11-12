@@ -37,6 +37,6 @@ VALIDATION_STEPS = _var_length // BATCH_SIZE // __val_subsplits
 
 
 # Config for saving path
-MODEL_SAVE_PATH = pathlib.Path("./savedmodel")
-CHECKPOINT_PATH = pathlib.Path("./checkpoint")
-LOG_PATH = pathlib.Path("./log")
+MODEL_SAVE_PATH = pathlib.Path("./savedmodels")
+CHECKPOINT_PATH = pathlib.Path("./checkpoints")
+LOG_PATH = pathlib.Path("./logs")
