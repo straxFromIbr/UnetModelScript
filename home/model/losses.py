@@ -49,7 +49,7 @@ class TverskyLoss(keras.losses.Loss):
         fn = tf.math.reduce_sum((y_pred_pos) * (1 - y_true_pos))
 
         TI = (tp + self.smooth) / (
-            tp + self.smooth + self.alpha * fp + (1 - self.alpha) * fn + self.smooth
+            tp + self.smooth + self.alpha * fp + (1 - self.alpha) * fn
         )
         Lt = 1.0 - TI
 
