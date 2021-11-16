@@ -1,4 +1,5 @@
 # %%
+import sys
 from datetime import datetime
 
 import tensorflow.keras as keras
@@ -7,7 +8,7 @@ from model import unet, losses, metrics
 
 import config
 from utils import callbacks
-from dataset import mk_dataset
+from dataset_utils import mk_dataset
 
 
 # %%
@@ -54,13 +55,13 @@ def get_callbacks(filename):
 # %%
 def train(train_ds, valid_ds, NB_EPOCHS, loss, optimizer=keras.optimizers.Adam()):
     model = compile_model(loss=loss, optimizer=optimizer)
-    filename = datetime.now().strftime("%y%m%d_") + model.loss.name
+    filename = datetime.now().strftime("%y%m%d%H_") + model.loss.name
     model_history = model.fit(
         train_ds,
         epochs=NB_EPOCHS,
-        steps_per_epoch=config.STEPS_PER_EPOCH,
-        validation_steps=config.VALIDATION_STEPS,
         validation_data=valid_ds,
+        # steps_per_epoch=config.STEPS_PER_EPOCH,
+        # validation_steps=config.VALIDATION_STEPS,
         callbacks=get_callbacks(filename),
     )
     model.save(str(config.MODEL_SAVE_PATH / filename))
@@ -69,19 +70,19 @@ def train(train_ds, valid_ds, NB_EPOCHS, loss, optimizer=keras.optimizers.Adam()
 
 # %%
 def main():
-    lossfunc_list = [
-        losses.DICELoss(name="DICE"),
-        losses.FocalTverskyLoss("Focal"),
-        losses.TverskyLoss("Tversky"),
-    ]
+    lossfunc_dict = {
+        "DICE": losses.DICELoss(name="DICE"),
+        "FOCAL": losses.FocalTverskyLoss("Focal"),
+        "TVERSKY": losses.TverskyLoss("Tversky"),
+    }
     train_ds, valid_ds = make_datasets()
-    for loss in lossfunc_list:
-        hist = train(
-            train_ds=train_ds,
-            valid_ds=valid_ds,
-            NB_EPOCHS=500,
-            loss=loss,
-        )
+    loss = lossfunc_dict[sys.argv[1]]
+    hist = train(
+        train_ds=train_ds,
+        valid_ds=valid_ds,
+        NB_EPOCHS=500,
+        loss=loss,
+    )
 
 
 # %%
