@@ -20,7 +20,6 @@ def make_datasets():
     valid_ds = mk_dataset.mk_dataset(
         SAT_PATH=config.VA_SAT_PATH,
         MAP_PATH=config.VA_MAP_PATH,
-        batch_size=1,
     )
     return train_ds, valid_ds
 
@@ -60,8 +59,8 @@ def train(train_ds, valid_ds, NB_EPOCHS, loss, optimizer=keras.optimizers.Adam()
         train_ds,
         epochs=NB_EPOCHS,
         validation_data=valid_ds,
-        # steps_per_epoch=config.STEPS_PER_EPOCH,
-        # validation_steps=config.VALIDATION_STEPS,
+        steps_per_epoch=config.STEPS_PER_EPOCH,
+        validation_steps=10,
         callbacks=get_callbacks(filename),
     )
     model.save(str(config.MODEL_SAVE_PATH / filename))
