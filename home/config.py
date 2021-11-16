@@ -33,7 +33,8 @@ STEPS_PER_EPOCH = _train_length // BATCH_SIZE
 
 EPOCHS = 20
 __val_subsplits = 5
-VALIDATION_STEPS = _var_length // BATCH_SIZE // __val_subsplits
+#VALIDATION_STEPS = _var_length // BATCH_SIZE // __val_subsplits
+VALIDATION_STEPS = 5
 
 
 # Config for saving path
