@@ -53,7 +53,7 @@ def train(model: keras.Model, train_ds, valid_ds, NB_EPOCHS):
         epochs=NB_EPOCHS,
         validation_data=valid_ds,
         steps_per_epoch=config.STEPS_PER_EPOCH,
-        validation_steps=10,
+        validation_steps=5,
         callbacks=get_callbacks(filename),
     )
     model.save(str(config.MODEL_SAVE_PATH / filename))
@@ -79,5 +79,5 @@ if __name__ == "__main__":
         model=model,
         train_ds=train_ds,
         valid_ds=valid_ds,
-        NB_EPOCHS=10,
+        NB_EPOCHS=30,
     )

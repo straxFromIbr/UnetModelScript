@@ -21,7 +21,7 @@ NB_MIX = 4
 
 basepath = pathlib.Path("/datasets")
 # basepath = pathlib.Path("../Datasets/datasets_21110115")
-basepath = pathlib.Path("/Volumes/RX3070/hagadir/dataset")
+# basepath = pathlib.Path("/Volumes/RX3070/hagadir/dataset")
 TR_SAT_PATH = basepath / "sat"
 TR_MAP_PATH = basepath / "map"
 
@@ -42,7 +42,7 @@ VALIDATION_STEPS = 5
 
 # Config for saving path
 date = datetime.now().strftime("%y%m%d%H%M")
-RES_BASE = pathlib.Path("../../results") / date
+RES_BASE = pathlib.Path("/results") / date
 MODEL_SAVE_PATH = RES_BASE / pathlib.Path("./savedmodels")
 CHECKPOINT_PATH = RES_BASE / pathlib.Path("./checkpoints")
 LOG_PATH = RES_BASE / pathlib.Path("./logs")
