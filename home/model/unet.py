@@ -5,7 +5,7 @@ from . import utils
 
 
 def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
-    inputs = tf.keras.layers.Input(shape=input_shape)
+    inputs = keras.layers.Input(shape=input_shape)
 
     # initializer = tf.random_normal_initializer(0.0, 0.02)
     x = inputs
@@ -64,7 +64,7 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
     x = last(x)
     # for layer in last_stacks:
     #     x = layer(x)
-    return tf.keras.Model(inputs=inputs, outputs=x)
+    return keras.Model(inputs=inputs, outputs=x)
 
 
 def unet_mobv1_model(input_shape: tuple, output_channels: int):
