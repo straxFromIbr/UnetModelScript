@@ -42,7 +42,7 @@ VALIDATION_STEPS = 5
 
 # Config for saving path
 date = datetime.now().strftime("%y%m%d%H%M")
-RES_BASE = pathlib.Path("../../results") / date
+RES_BASE = pathlib.Path("/gdrive/MyDrive/卒研/results") / date
 MODEL_SAVE_PATH = RES_BASE / pathlib.Path("./savedmodels")
 CHECKPOINT_PATH = RES_BASE / pathlib.Path("./checkpoints")
 LOG_PATH = RES_BASE / pathlib.Path("./logs")
