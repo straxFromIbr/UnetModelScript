@@ -1,10 +1,50 @@
 import pathlib
+import functools
 
 import tensorflow as tf
 
 import config
 
 from . import cutmix, preprocess
+
+
+def mk_base_dataset(
+    SAT_PATH: pathlib.Path,
+    MAP_PATH: pathlib.Path,
+):
+    image_loader_rgb = functools.partial(preprocess.load_image, channels=3)
+    sat_path_list = tf.data.Dataset.list_files(str(SAT_PATH / "*.png"), shuffle=False)
+    sat_dataset = sat_path_list.map(
+        image_loader_rgb, num_parallel_calls=tf.data.AUTOTUNE
+    )
+
+    image_loader_gry = functools.partial(preprocess.load_image, channels=1)
+    map_path_list = tf.data.Dataset.list_files(str(MAP_PATH / "*.png"), shuffle=False)
+    map_dataset = map_path_list.map(
+        image_loader_gry, num_parallel_calls=tf.data.AUTOTUNE
+    )
+
+    sat_map = tf.data.Dataset.zip((sat_dataset, map_dataset)).shuffle(config.BATCH_SIZE)
+    return sat_map
+
+
+def augument_ds(sat_map: tf.data.Dataset):
+    sat_map_cum = (
+        sat_map.batch(config.NB_MIX)  # .cache()
+        .map(
+            cutmix.cutmix_batch,
+            num_parallel_calls=tf.data.AUTOTUNE,
+        )
+        .unbatch()
+        .repeat()
+    )
+
+    return sat_map_cum
+
+
+def post_process_ds(ds: tf.data.Dataset, batch_size=config.BATCH_SIZE):
+    return ds.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
+
 
 
 def mk_dataset(
