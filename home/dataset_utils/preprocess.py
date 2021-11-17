@@ -1,32 +1,9 @@
+from numpy.lib.shape_base import dsplit
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.layers.experimental import preprocessing as tf_preprocessing
 
 import config
-
-
-def load_image(image):
-    image_f = tf.io.read_file(image)
-    image_jpeg = tf.image.decode_jpeg(image_f)
-    image_tensor = tf.cast(image_jpeg, tf.float32)
-    return image_tensor
-
-
-def load_image_gray(image):
-    image_f = tf.io.read_file(image)
-    image_jpeg = tf.image.decode_jpeg(image_f, channels=1)
-    image_tensor = tf.cast(image_jpeg, tf.float32)
-
-    return image_tensor
-
-
-# def preprocess_images(*images):
-#     processed_images_list = []
-#     for image in images:
-#         image = resize(image, IMG_HEIGHT, IMG_WIDTH)
-#         image = normalize(image)
-#         processed_images_list.append(image)
-#     return tuple(processed_images_list)
 
 
 def resize(input_image, height, width):
@@ -40,8 +17,36 @@ def resize(input_image, height, width):
 
 def normalize(input_image):
     # Normalizing the images to [0, 1]
-    input_image = (input_image / 127.5) / 2
+    input_image = input_image / 255.0
     return input_image
+
+
+def load_image(path, channels):
+    # ファイルから読み込み
+    image_f = tf.io.read_file(path)
+    image_jpeg = tf.image.decode_jpeg(image_f, channels=channels)
+    # Tensorに変換、正規化([0,1])
+    _normer = tf.constant(255.0, dtype=tf.float32)
+    image_tensor = tf.cast(image_jpeg, tf.float32) / _normer
+    # リサイズ
+    image = resize(image_tensor, config.IMG_HEIGHT, config.IMG_WIDTH)
+    return image
+
+
+def load_image_gray(image):
+    image_f = tf.io.read_file(image)
+    image_jpeg = tf.image.decode_jpeg(image_f, channels=1)
+    image_tensor = tf.cast(image_jpeg, tf.float32)
+    return image_tensor
+
+
+# def preprocess_images(*images):
+#     processed_images_list = []
+#     for image in images:
+#         image = resize(image, IMG_HEIGHT, IMG_WIDTH)
+#         image = normalize(image)
+#         processed_images_list.append(image)
+#     return tuple(processed_images_list)
 
 
 def normalize_map(input_image):
