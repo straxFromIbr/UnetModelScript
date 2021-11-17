@@ -29,7 +29,7 @@ def compile_model(loss):
     )
     # Compile the model
     optimizer = keras.optimizers.Adam()
-    metric_list = ["accuracy", metrics.iou_coef]
+    metric_list = [metrics.iou_coef]
     model.compile(optimizer=optimizer, loss=loss, metrics=metric_list)
     return model
 
@@ -57,6 +57,7 @@ def train(model: keras.Model, train_ds, valid_ds, NB_EPOCHS):
         callbacks=get_callbacks(filename),
     )
     model.save(str(config.MODEL_SAVE_PATH / filename))
+    model.save(str(config.MODEL_SAVE_PATH / filename) + ".h5")
     return model_history
 
 
