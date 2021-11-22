@@ -28,23 +28,21 @@ def mk_base_dataset(
     return sat_map
 
 
-def augument_ds(sat_map: tf.data.Dataset):
+def augument_ds(sat_map: tf.data.Dataset, nb_mix: int):
     sat_map_cum = (
-        sat_map.batch(config.NB_MIX)  # .cache()
+        sat_map.batch(nb_mix)  # .cache()
         .map(
             cutmix.cutmix_batch,
             num_parallel_calls=tf.data.AUTOTUNE,
         )
         .unbatch()
-        .repeat()
     )
 
     return sat_map_cum
 
 
 def post_process_ds(ds: tf.data.Dataset, batch_size=config.BATCH_SIZE):
-    return ds.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
-
+    return ds.repeat().batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
 
 
 def mk_dataset(

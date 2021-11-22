@@ -41,8 +41,7 @@ VALIDATION_STEPS = 5
 
 
 # Config for saving path
-date = datetime.now().strftime("%y%m%d%H%M")
+date = datetime.now().strftime("%y%m%d")
 RES_BASE = pathlib.Path("/results") / date
-MODEL_SAVE_PATH = RES_BASE / pathlib.Path("./savedmodels")
 CHECKPOINT_PATH = RES_BASE / pathlib.Path("./checkpoints")
 LOG_PATH = RES_BASE / pathlib.Path("./logs")
