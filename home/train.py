@@ -33,7 +33,7 @@ def compile_model(loss):
     )
     # Compile the model
     optimizer = keras.optimizers.Adam()
-    metric_list = [metrics.iou_coef]
+    metric_list = [keras.metrics.MeanIoU(num_classes=2)]
     model.compile(optimizer=optimizer, loss=loss, metrics=metric_list)
     return model
 
