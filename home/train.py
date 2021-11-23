@@ -6,12 +6,12 @@ import tensorflow.keras as keras
 
 import config
 from dataset_utils import mk_dataset
-from model import losses, metrics, unet
+from model import losses, unet
 from utils import callbacks
 
 
 # Get Datasets
-def make_datasets(use_cumix: bool, nbmix: int):
+def make_datasets(use_cumix: bool, nbmix: int = 3):
     """
     データセット作成。`use_cutmix`でCutmix適用を決める。
     """
