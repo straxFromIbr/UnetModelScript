@@ -7,7 +7,9 @@ services:
     volumes:
       - "./home:/home"
       - "../results:/results"
-    image: jupyterlab_tf
+    environment:
+      - SHELL=/bin/bash
+    image: straxfromibr/jupyterlab_tf
     deploy:
       resources:
         reservations:
