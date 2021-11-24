@@ -6,3 +6,4 @@ checkpoints/
 savedmodel*
 home/.ipynb_checkpoints/
 home/.vscode/
+home/default-*.ipynb
