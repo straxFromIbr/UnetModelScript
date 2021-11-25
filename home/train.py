@@ -15,7 +15,7 @@ from utils import callbacks
 
 # Get Datasets
 def make_datasets(
-    tr_path: List[str], va_path: List[str], use_cumix: bool, nbmix: int = 3
+    tr_path: List[str], va_path: List[str], use_cutmix: bool, nbmix: int = 3
 ):
     """
     データセット作成。`use_cutmix`でCutmix適用を決める。
