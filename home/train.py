@@ -23,7 +23,7 @@ def make_datasets(
     train_ds = mk_dataset.mk_base_dataset(
         tr_path, config.TR_SAT_PATH, config.TR_MAP_PATH
     )
-    if use_cumix:
+    if use_cutmix:
         train_ds = mk_dataset.augument_ds(train_ds, nbmix)
     train_ds = mk_dataset.post_process_ds(train_ds)
 
