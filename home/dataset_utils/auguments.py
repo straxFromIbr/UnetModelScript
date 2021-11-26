@@ -1,6 +1,7 @@
 import tensorflow as tf
+import tensorflow.keras as keras
+from tensorflow.keras.layers.experimental import preprocessing as tf_preprocessing
 
-# from config import *
 import config
 
 
@@ -158,3 +159,20 @@ def cutmix_batch(*ds):
             axis=0,
         )
     return res_inp_batch, res_tar_batch
+
+
+class Augment(keras.layers.Layer):
+    def __init__(self, seed=42):
+        super().__init__()
+        # both use the same seed, so they'll make the same random changes.
+        self.augment_inputs = tf_preprocessing.RandomFlip(
+            mode="horizontal_and_vertical", seed=seed
+        )
+        self.augment_labels = tf_preprocessing.RandomFlip(
+            mode="horizontal_and_vertical", seed=seed
+        )
+
+    def call(self, inputs, labels):
+        inputs = self.augment_inputs(inputs)
+        labels = self.augment_labels(labels)
+        return inputs, labels

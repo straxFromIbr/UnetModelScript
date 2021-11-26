@@ -66,19 +66,3 @@ def preprocess_image_map(image):
     image = normalize_map(image)
     return image
 
-
-class Augment(keras.layers.Layer):
-    def __init__(self, seed=42):
-        super().__init__()
-        # both use the same seed, so they'll make the same random changes.
-        self.augment_inputs = tf_preprocessing.RandomFlip(
-            mode="horizontal_and_vertical", seed=seed
-        )
-        self.augment_labels = tf_preprocessing.RandomFlip(
-            mode="horizontal_and_vertical", seed=seed
-        )
-
-    def call(self, inputs, labels):
-        inputs = self.augment_inputs(inputs)
-        labels = self.augment_labels(labels)
-        return inputs, labels
