@@ -128,7 +128,7 @@ if __name__ == "__main__":
     train_ds, valid_ds = make_datasets(
         tr_path=tr_pathlist,
         va_path=va_pathlist,
-        use_cumix=args.use_cutmix,
+        use_cutmix=args.use_cutmix,
         nbmix=args.nbmix,
     )
     print(args.epochs)
