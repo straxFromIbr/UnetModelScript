@@ -1,7 +1,7 @@
 import pathlib
 from datetime import datetime
 
-BUFFER_SIZE = 400
+BUFFER_SIZE = 200
 BATCH_SIZE = 64
 # Each image is 224x224 in size
 
@@ -20,10 +20,11 @@ INPUT_SIZE = (size, size, IMG_CH)
 NB_MIX = 4
 
 basepath = pathlib.Path("/datasets")
+basepath = pathlib.Path("/mass_roads")
 # basepath = pathlib.Path("../Datasets/datasets_21110115")
 # basepath = pathlib.Path("/Volumes/RX3070/hagadir/dataset")
-TR_SAT_PATH = basepath / "sat"
-TR_MAP_PATH = basepath / "map"
+TR_SAT_PATH = basepath / "train/sat"
+TR_MAP_PATH = basepath / "train/map"
 
 VA_SAT_PATH = basepath / "valid/sat"
 VA_MAP_PATH = basepath / "valid/map"
