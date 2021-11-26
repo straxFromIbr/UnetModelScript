@@ -13,6 +13,6 @@ cd "$(dirname "$0")"
 
 docker-compose down
 docker-compose up -d
-docker cp ../dataset unetmodelscript_devs_1:/datasets
+#docker cp ../dataset unetmodelscript_devs_1:/datasets
 docker exec -it unetmodelscript_devs_1 bash
 
