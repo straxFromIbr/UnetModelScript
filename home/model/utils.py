@@ -2,30 +2,6 @@ import tensorflow as tf
 import tensorflow.keras as keras
 
 
-def upsample(filters, size, norm_type="batchnorm", apply_dropout=False):
-    initializer = tf.random_normal_initializer(0.0, 0.02)
-    upconv = keras.Sequential()
-    upconv.add(
-        keras.layers.Conv2DTranspose(
-            filters,
-            size,
-            strides=2,
-            padding="same",
-            kernel_initializer=initializer,
-            use_bias=False,
-        )
-    )
-
-    if norm_type.lower() == "batchnorm":
-        upconv.add(keras.layers.BatchNormalization())
-
-    if apply_dropout:
-        upconv.add(keras.layers.Dropout(0.5))
-
-    upconv.add(keras.layers.ReLU())
-
-    return upconv
-
 
 def downsample(filters, size, apply_batchnorm=True):
     initializer = tf.random_normal_initializer(0.0, 0.02)
@@ -49,6 +25,30 @@ def downsample(filters, size, apply_batchnorm=True):
 
     return result
 
+
+def upsample(filters, size, apply_batchnorm=True, apply_dropout=False):
+    initializer = tf.random_normal_initializer(0.0, 0.02)
+    upconv = keras.Sequential()
+    upconv.add(
+        keras.layers.Conv2DTranspose(
+            filters,
+            size,
+            strides=2,
+            padding="same",
+            kernel_initializer=initializer,
+            use_bias=False,
+        )
+    )
+
+    if apply_batchnorm:
+        upconv.add(keras.layers.BatchNormalization())
+
+    if apply_dropout:
+        upconv.add(keras.layers.Dropout(0.5))
+
+    upconv.add(keras.layers.ReLU())
+
+    return upconv
 
 def build_down_stack(input_shape: tuple):
     weights = None
