@@ -1,9 +1,7 @@
-import argparse
-import pathlib
-import sys
-import random
+import os
 from typing import List
-
+import pathlib
+import random
 
 import tensorflow.keras as keras
 
@@ -15,20 +13,26 @@ from utils import callbacks
 
 # Get Datasets
 def make_datasets(
-    tr_path: List[str], va_path: List[str], use_cutmix: bool, nbmix: int = 3
+    ds_root: pathlib.Path,
+    tr_path: List[str],
+    va_path: List[str],
+    use_cutmix: bool,
+    nbmix: int = 3,
 ):
     """
     データセット作成。`use_cutmix`でCutmix適用を決める。
     """
-    train_ds = mk_dataset.mk_base_dataset(
-        tr_path, config.TR_SAT_PATH, config.TR_MAP_PATH
-    )
+    ds_root = pathlib.Path(ds_root)
+    train_ds = mk_dataset.mk_base_dataset(tr_path, ds_root / "sat", ds_root / "map")
     if use_cutmix:
         train_ds = mk_dataset.augument_ds(train_ds, nbmix)
     train_ds = mk_dataset.post_process_ds(train_ds)
 
     valid_ds = mk_dataset.mk_base_dataset(
-        va_path, config.TR_SAT_PATH, config.TR_MAP_PATH
+        va_path,
+        ds_root / "sat",
+        ds_root / "map"
+        # va_path, config.TR_SAT_PATH, config.TR_MAP_PATH
     )
     valid_ds = mk_dataset.post_process_ds(valid_ds)
     return train_ds, valid_ds
@@ -95,27 +99,25 @@ def getargs():
         type=int,
     )
 
+    parser.add_argument(
+        "--datadir",
+        help="データセットのルートパス",
+        type=str,
+    )
+
+    parser.add_argument(
+        "--pretrained",
+        help="事前学習済みのモデル",
+        type=str,
+        required=False,
+    )
+
     args = parser.parse_args()
 
     return args
 
 
-# # %%
-# def train(model: keras.Model, train_ds, valid_ds, NB_EPOCHS):
-#     filename = model.loss.name
-#     model_history = model.fit(
-#         train_ds,
-#         epochs=NB_EPOCHS,
-#         validation_data=valid_ds,
-#         steps_per_epoch=config.STEPS_PER_EPOCH,
-#         validation_steps=5,
-#         callbacks=get_callbacks(filename),
-#     )
-#     return model_history
-
-
-if __name__ == "__main__":
-    args = getargs()
+def main(**args):
     pathlist = config.TR_MAP_PATH.glob("*.png")
     pathlist = [path.name for path in pathlist]
     random.shuffle(pathlist)
@@ -123,25 +125,45 @@ if __name__ == "__main__":
     nb_tr = int(len(pathlist) * 0.8)
     nb_va = int(len(pathlist) * 0.2)
     tr_pathlist = pathlist[:nb_tr]
-    va_pathlist = pathlist[nb_tr:]
+    va_pathlist = pathlist[nb_tr : nb_tr + nb_va]
 
     train_ds, valid_ds = make_datasets(
+        ds_root=args["datadir"],
         tr_path=tr_pathlist,
         va_path=va_pathlist,
-        use_cutmix=args.use_cutmix,
-        nbmix=args.nbmix,
+        use_cutmix=args["use_cutmix"],
+        nbmix=args["nbmix"],
     )
-    print(args.epochs)
+    print(args["epochs"])
 
-    loss = losses.TverskyLoss(name="Tversky", alpha=args.alpha)
+    loss = losses.TverskyLoss(name="Tversky", alpha=args["alpha"])
     model = compile_model(loss=loss)
-    ## 訓練
-    filename = args.logdir
+
+    if args["pretrained"] is not None:
+        path = pathlib.Path(args['pretrained'])
+        assert path.parent.exists()
+        loss = losses.TverskyLoss(name="Tversky", alpha=0.7)
+        ret = model.load_weights(args["pretrained"])
+
+    checkpointpath = config.CHECKPOINT_PATH / args["logdir"] / args["logdir"]
+    if checkpointpath.exists():
+        print("load weights from checkpoint")
+        model.load_weights(checkpointpath)
+        print("done")
+
+    # 訓練
     model_history = model.fit(
         train_ds,
-        epochs=args.epochs,
+        epochs=args["epochs"],
         validation_data=valid_ds,
         steps_per_epoch=config.STEPS_PER_EPOCH,
         validation_steps=5,
-        callbacks=get_callbacks(filename),
+        callbacks=get_callbacks(args["logdir"]),
     )
+
+
+if __name__ == "__main__":
+    import argparse
+
+    args = getargs()
+    main(**vars(args))

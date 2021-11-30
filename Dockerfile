@@ -20,24 +20,11 @@ RUN : INSTALL CV2                                                   && \
     :                                                               && \
     : INSTALL PIP packages                                          && \
     pip install jupyterlab matplotlib black isort                      \
-                jupyterlab_code_formatter tensorflow-datasets          \
-                scikit-learn                                        && \
-    :                                                               && \
-    :                                                               && \
-    : INSTALL NodeJS for JL extension                               && \
-    curl -sL https://deb.nodesource.com/setup_12.x | bash -         && \
-    apt-get install -y --no-install-recommends nodejs wget vim git  && \
-    apt-get upgrade -y                                              && \
-    :                                                               && \
-    :                                                               && \
-    : INSTALL JL Extensions                                         && \
-    pip install JLDracula                                           && \
-    jupyter labextension install '@axlair/jupyterlab_vim'           && \
-    jupyter lab build                                               && \
+                scikit-learn scikit-image tensorflow-datasets       && \
     :                                                               && \
     :                                                               && \
     : INSTALL OTHER PACKAGES                                        && \
-    apt-get install -y --no-install-recommends wget vim git
+    apt-get install -y --no-install-recommends wget vim
 
 
 CMD jupyter lab \

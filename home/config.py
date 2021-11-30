@@ -26,8 +26,8 @@ basepath = pathlib.Path("/mass_roads")
 TR_SAT_PATH = basepath / "train/sat"
 TR_MAP_PATH = basepath / "train/map"
 
-VA_SAT_PATH = basepath / "valid/sat"
-VA_MAP_PATH = basepath / "valid/map"
+VA_SAT_PATH = basepath / "test/sat"
+VA_MAP_PATH = basepath / "test/map"
 
 EPOCHS = 20
 _train_length = len(list(TR_SAT_PATH.glob("*.png")))

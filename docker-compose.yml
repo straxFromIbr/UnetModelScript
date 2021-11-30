@@ -8,6 +8,7 @@ services:
       - "./home:/home"
       - "../results:/results"
       - "../mass_roads:/mass_roads"
+      - "../dataset:/dataset"
     environment:
       - SHELL=/bin/bash
     image: straxfromibr/jupyterlab_tf
