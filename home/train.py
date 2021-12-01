@@ -106,6 +106,12 @@ def getargs():
         help="データセットのルートパス",
         type=str,
     )
+    parser.add_argument(
+        "--suffix",
+        help="データの拡張子",
+        type=str,
+        required=True,
+    )
 
     parser.add_argument(
         "--pretrained",
@@ -121,9 +127,10 @@ def getargs():
 
 def main(**args):
     random.seed(1)
-    pathlist = pathlib.Path(args["datadir"]).glob("**/*.jpg")
+    pathlist = pathlib.Path(args["datadir"]).glob(f"**/*.{args['suffix']}")
     pathlist = sorted([path.name for path in pathlist])
     random.shuffle(pathlist)
+    print(pathlist[:10])
 
     nb_tr = int(len(pathlist) * 0.8)
     nb_va = int(len(pathlist) * 0.2)
@@ -131,8 +138,9 @@ def main(**args):
     va_pathlist = pathlist[nb_tr : nb_tr + nb_va]
     print(va_pathlist[:10])
 
+    ds_root = pathlib.Path(args["datadir"])
     train_ds, valid_ds = make_datasets(
-        ds_root=args["datadir"],
+        ds_root=ds_root,
         tr_path=tr_pathlist,
         va_path=va_pathlist,
         use_cutmix=args["use_cutmix"],

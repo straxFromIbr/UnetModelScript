@@ -42,7 +42,7 @@ def augument_ds(sat_map: tf.data.Dataset, nb_mix: int):
     sat_map_cum = (
         sat_map.batch(nb_mix)
         #! .cache() ## コイツが `kernel dead`の元凶。メモリ喰い。
-        .map(auguments.Augment())
+        # .map(auguments.Augment())
         .map(auguments.cutmix_batch, num_parallel_calls=tf.data.AUTOTUNE)
         .unbatch()
     )
