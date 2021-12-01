@@ -118,8 +118,9 @@ def getargs():
 
 
 def main(**args):
-    pathlist = config.TR_MAP_PATH.glob("*.png")
-    pathlist = [path.name for path in pathlist]
+    random.seed(1)
+    pathlist = pathlib.Path(args["datadir"]).glob("*.png")
+    pathlist = sorted([path.name for path in pathlist])
     random.shuffle(pathlist)
 
     nb_tr = int(len(pathlist) * 0.8)
@@ -140,9 +141,7 @@ def main(**args):
     model = compile_model(loss=loss)
 
     if args["pretrained"] is not None:
-        path = pathlib.Path(args['pretrained'])
-        assert path.parent.exists()
-        loss = losses.TverskyLoss(name="Tversky", alpha=0.7)
+        assert pathlib.Path(args["pretrained"]).parent.exists()
         ret = model.load_weights(args["pretrained"])
 
     checkpointpath = config.CHECKPOINT_PATH / args["logdir"] / args["logdir"]
