@@ -5,10 +5,10 @@ from . import utils
 
 
 def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
-    inputs = keras.layers.Input(shape=input_shape)
+    inputs = keras.layers.Input(shape=input_shape, name="input")
 
     # initializer = tf.random_normal_initializer(0.0, 0.02)
-    x = inputs
+    # x = inputs
 
     # Downsampling through the model
     down_stack = [
@@ -22,7 +22,13 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
         utils.downsample(512, 4),  # (batch_size, 1, 1, 512)
     ]
     skips = []
+    first = True
     for down in down_stack:
+        if first:
+            x = down(inputs)
+            skips.append(x)
+            first = False
+            continue
         x = down(x)
         skips.append(x)
 
