@@ -22,18 +22,13 @@ def make_datasets(
     """
     データセット作成。`use_cutmix`でCutmix適用を決める。
     """
-    ds_root = pathlib.Path(ds_root)
+
     train_ds = mk_dataset.mk_base_dataset(tr_path, ds_root / "sat", ds_root / "map")
     if use_cutmix:
         train_ds = mk_dataset.augument_ds(train_ds, nbmix)
     train_ds = mk_dataset.post_process_ds(train_ds)
 
-    valid_ds = mk_dataset.mk_base_dataset(
-        va_path,
-        ds_root / "sat",
-        ds_root / "map"
-        # va_path, config.TR_SAT_PATH, config.TR_MAP_PATH
-    )
+    valid_ds = mk_dataset.mk_base_dataset(va_path, ds_root / "sat", ds_root / "map")
     valid_ds = mk_dataset.post_process_ds(valid_ds)
     return train_ds, valid_ds
 
@@ -69,6 +64,13 @@ def getargs():
         help="ログのパス",
         required=True,
         type=str,
+    )
+
+    parser.add_argument(
+        "--use_dice",
+        help="DICE損失を使う",
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(
@@ -119,7 +121,7 @@ def getargs():
 
 def main(**args):
     random.seed(1)
-    pathlist = pathlib.Path(args["datadir"]).glob("*.png")
+    pathlist = pathlib.Path(args["datadir"]).glob("**/*.jpg")
     pathlist = sorted([path.name for path in pathlist])
     random.shuffle(pathlist)
 
@@ -127,6 +129,7 @@ def main(**args):
     nb_va = int(len(pathlist) * 0.2)
     tr_pathlist = pathlist[:nb_tr]
     va_pathlist = pathlist[nb_tr : nb_tr + nb_va]
+    print(va_pathlist[:10])
 
     train_ds, valid_ds = make_datasets(
         ds_root=args["datadir"],
@@ -136,19 +139,17 @@ def main(**args):
         nbmix=args["nbmix"],
     )
     print(args["epochs"])
-
     loss = losses.TverskyLoss(name="Tversky", alpha=args["alpha"])
+    if args["use_dice"]:
+        loss = losses.DICELoss(name="DICE")
+
     model = compile_model(loss=loss)
 
     if args["pretrained"] is not None:
-        assert pathlib.Path(args["pretrained"]).parent.exists()
-        ret = model.load_weights(args["pretrained"])
 
-    checkpointpath = config.CHECKPOINT_PATH / args["logdir"] / args["logdir"]
-    if checkpointpath.exists():
-        print("load weights from checkpoint")
-        model.load_weights(checkpointpath)
-        print("done")
+        if not pathlib.Path(args["pretrained"]).parent.exists():
+            raise FileNotFoundError(f"{args['pretrained']} not found.")
+        ret = model.load_weights(args["pretrained"])
 
     # 訓練
     model_history = model.fit(
@@ -159,6 +160,7 @@ def main(**args):
         validation_steps=5,
         callbacks=get_callbacks(args["logdir"]),
     )
+    return model
 
 
 if __name__ == "__main__":

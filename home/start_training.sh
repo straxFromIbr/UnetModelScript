@@ -5,15 +5,15 @@ cd "$(dirname "$0")"
 python3 ./train.py \
         --datadir '/mass_roads/train' \
         --logdir 'testing_pt' \
+        --use_dice \
         --use_cutmix \
-        --alpha 0.5 \
         --epochs 10
 
 python3 ./train.py \
     --datadir '/dataset/train' \
     --logdir 'testing_ft' \
+    --use_dice \
     --use_cutmix \
-    --alpha 0.5 \
     --epochs 10
 
 #sleep 60
