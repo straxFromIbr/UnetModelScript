@@ -2,12 +2,11 @@ import tensorflow as tf
 import tensorflow.keras as keras
 
 
-
 def downsample(filters, size, apply_batchnorm=True):
     initializer = tf.random_normal_initializer(0.0, 0.02)
 
-    result = tf.keras.Sequential()
-    result.add(
+    conv = tf.keras.Sequential()
+    conv.add(
         tf.keras.layers.Conv2D(
             filters,
             size,
@@ -19,11 +18,11 @@ def downsample(filters, size, apply_batchnorm=True):
     )
 
     if apply_batchnorm:
-        result.add(tf.keras.layers.BatchNormalization())
+        conv.add(tf.keras.layers.BatchNormalization())
 
-    result.add(tf.keras.layers.LeakyReLU())
+    conv.add(tf.keras.layers.LeakyReLU())
 
-    return result
+    return conv
 
 
 def upsample(filters, size, apply_batchnorm=True, apply_dropout=False):
@@ -49,6 +48,7 @@ def upsample(filters, size, apply_batchnorm=True, apply_dropout=False):
     upconv.add(keras.layers.ReLU())
 
     return upconv
+
 
 def build_down_stack(input_shape: tuple):
     weights = None
