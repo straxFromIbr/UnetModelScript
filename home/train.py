@@ -23,12 +23,16 @@ def make_datasets(
     データセット作成。`use_cutmix`でCutmix適用を決める。
     """
 
-    train_ds = mk_dataset.mk_base_dataset(tr_path, ds_root / "sat", ds_root / "map")
+    tr_sat_path_list = sorted([str(ds_root / "sat" / path) for path in tr_path])
+    tr_map_path_list = sorted([str(ds_root / "map" / path) for path in tr_path])
+    train_ds = mk_dataset.mk_base_dataset(sat_path_list=tr_sat_path_list, map_path_list=tr_map_path_list)
     if use_cutmix:
         train_ds = mk_dataset.augument_ds(train_ds, nbmix)
     train_ds = mk_dataset.post_process_ds(train_ds)
 
-    valid_ds = mk_dataset.mk_base_dataset(va_path, ds_root / "sat", ds_root / "map")
+    va_sat_path_list = sorted([str(ds_root / "sat" / path) for path in va_path])
+    va_map_path_list = sorted([str(ds_root / "map" / path) for path in va_path])
+    valid_ds = mk_dataset.mk_base_dataset(sat_path_list=va_sat_path_list, map_path_list=va_map_path_list)
     valid_ds = mk_dataset.post_process_ds(valid_ds)
     return train_ds, valid_ds
 
@@ -44,6 +48,8 @@ def compile_model(loss):
     metric_list = [keras.metrics.MeanIoU(num_classes=2)]
     model.compile(optimizer=optimizer, loss=loss, metrics=metric_list)
     return model
+
+
 
 
 # Define Callbacks
