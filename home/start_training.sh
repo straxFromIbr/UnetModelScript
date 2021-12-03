@@ -4,19 +4,18 @@ cd "$(dirname "$0")"
 
 python3 ./train.py \
         --datadir '/mass_roads/train' --suffix 'png' \
-        --logdir 'cmTn2-d-E30_MR' \
+        --logdir 'cmF-d-E10_MR_basemodel' \
         --use_dice \
-        --use_cutmix \
-        --nbmix 2 \
-        --epochs 30
+        --xception \
+        --epochs 10
 
-python3 ./train.py \
-        --datadir '/mass_roads/train' --suffix 'png' \
-        --logdir 'cmTn4-d-E30_MR' \
-        --use_dice \
-        --use_cutmix \
-        --nbmix 4 \
-        --epochs 30
+#python3 ./train.py \
+#        --datadir '/mass_roads/train' --suffix 'png' \
+#        --logdir 'cmTn4-d-E30_MR' \
+#        --use_dice \
+#        --use_cutmix \
+#        --nbmix 4 \
+#        --epochs 30
 
 #python3 ./train.py \
 #        --datadir '/mass_roads/train' --suffix 'png' \
