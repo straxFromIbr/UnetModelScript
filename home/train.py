@@ -1,4 +1,3 @@
-import os
 from typing import List
 import pathlib
 import random
@@ -23,26 +22,38 @@ def make_datasets(
     データセット作成。`use_cutmix`でCutmix適用を決める。
     """
 
-    tr_sat_path_list = sorted([str(ds_root / "sat" / path) for path in tr_path])
-    tr_map_path_list = sorted([str(ds_root / "map" / path) for path in tr_path])
-    train_ds = mk_dataset.mk_base_dataset(sat_path_list=tr_sat_path_list, map_path_list=tr_map_path_list)
+    tr_sat_path_list = sorted([str(ds_root / "sat" / path)
+                              for path in tr_path])
+    tr_map_path_list = sorted([str(ds_root / "map" / path)
+                              for path in tr_path])
+    train_ds = mk_dataset.mk_base_dataset(
+        sat_path_list=tr_sat_path_list, map_path_list=tr_map_path_list
+    )
     if use_cutmix:
         train_ds = mk_dataset.augument_ds(train_ds, nbmix)
     train_ds = mk_dataset.post_process_ds(train_ds)
 
-    va_sat_path_list = sorted([str(ds_root / "sat" / path) for path in va_path])
-    va_map_path_list = sorted([str(ds_root / "map" / path) for path in va_path])
-    valid_ds = mk_dataset.mk_base_dataset(sat_path_list=va_sat_path_list, map_path_list=va_map_path_list)
+    va_sat_path_list = sorted([str(ds_root / "sat" / path)
+                              for path in va_path])
+    va_map_path_list = sorted([str(ds_root / "map" / path)
+                              for path in va_path])
+    valid_ds = mk_dataset.mk_base_dataset(
+        sat_path_list=va_sat_path_list, map_path_list=va_map_path_list
+    )
     valid_ds = mk_dataset.post_process_ds(valid_ds)
     return train_ds, valid_ds
 
 
 # Define model
-def compile_model(loss):
+def compile_model(loss, xception=False):
     model = unet.big_unet_model(
         input_shape=config.INPUT_SIZE,
         output_channels=config.OUT_CH,
     )
+    if xception:
+        del model
+        model = unet.xception_unet(img_size=config.INPUT_SIZE, num_classes=1)
+
     # Compile the model
     optimizer = keras.optimizers.Adam()
     metric_list = [keras.metrics.MeanIoU(num_classes=2)]
@@ -50,20 +61,19 @@ def compile_model(loss):
     return model
 
 
-
-
 # Define Callbacks
 def get_callbacks(filename):
     tboard_cb = callbacks.get_tboard_callback(str(config.LOG_PATH / filename))
-    checkpoint_cb = callbacks.get_checkpoint_callback(
-        str(config.CHECKPOINT_PATH / filename / filename)
-    )
-    callback_list = [tboard_cb, checkpoint_cb]
+    checkpoint_path = str(config.CHECKPOINT_PATH /
+                          filename / filename) + "_{epoch//5:03d}"
+    checkpoint_cb = callbacks.get_checkpoint_callback(checkpoint_path)
+    early_stopping_cb = keras.callbacks.EarlyStopping()
+    callback_list = [tboard_cb, checkpoint_cb, early_stopping_cb]
     return callback_list
 
 
 def getargs():
-    parser = argparse.ArgumentParser(description="U-Netによる道路検出。Tversky損失、CutMix")
+    parser = argparse.ArgumentParser(description="U-Netによる道路検出。CutMix")
 
     parser.add_argument(
         "--logdir",
@@ -126,6 +136,13 @@ def getargs():
         required=False,
     )
 
+    parser.add_argument(
+        "--xception",
+        help="Xception",
+        action="store_true",
+        default=False,
+    )
+
     args = parser.parse_args()
 
     return args
@@ -141,7 +158,7 @@ def main(**args):
     nb_tr = int(len(pathlist) * 0.8)
     nb_va = int(len(pathlist) * 0.2)
     tr_pathlist = pathlist[:nb_tr]
-    va_pathlist = pathlist[nb_tr : nb_tr + nb_va]
+    va_pathlist = pathlist[nb_tr: nb_tr + nb_va]
     print(va_pathlist[:10])
 
     ds_root = pathlib.Path(args["datadir"])
@@ -157,7 +174,7 @@ def main(**args):
     if args["use_dice"]:
         loss = losses.DICELoss(name="DICE")
 
-    model = compile_model(loss=loss)
+    model = compile_model(loss=loss, xception=args["xception"])
 
     if args["pretrained"] is not None:
 

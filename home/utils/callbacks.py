@@ -5,8 +5,6 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from IPython.display import clear_output
 
-from .display import create_mask
-
 
 class DisplayCallback(keras.callbacks.Callback):
     def __init__(self, model, sample_inp, sample_tar):
@@ -40,7 +38,9 @@ def get_checkpoint_callback(checkpoint_dir):
     # チェックポイントコールバックを作る
     cp_callback = keras.callbacks.ModelCheckpoint(
         checkpoint_dir,
+        # save_freq=1,
         save_weights_only=True,
-        verbose=1,
+        save_best_only=True,
+        # verbose=1,
     )
     return cp_callback
