@@ -22,8 +22,10 @@ def mk_base_dataset(sat_path_list: List[str], map_path_list: List[str]):
         image_loader_gry, num_parallel_calls=tf.data.AUTOTUNE
     )
 
+    # fmt:off
     sat_map = (
-        tf.data.Dataset.zip((sat_dataset, map_dataset))
+        tf.data.Dataset
+        .zip((sat_dataset, map_dataset))
         .shuffle(config.BUFFER_SIZE)
         .repeat()
     )
@@ -31,12 +33,12 @@ def mk_base_dataset(sat_path_list: List[str], map_path_list: List[str]):
     return sat_map
 
 
-def augument_ds(sat_map: tf.data.Dataset, nb_mix: int):
+def cutmix_ds(sat_map: tf.data.Dataset, nb_mix: int):
     sat_map_cum = (
-        sat_map.batch(nb_mix)
-        # .cache() ## コイツが `kernel dead`の元凶。メモリ喰い。
-        # .map(auguments.Augment())
-        .map(auguments.cutmix_batch, num_parallel_calls=tf.data.AUTOTUNE).unbatch()
+        sat_map
+        .batch(nb_mix)
+        .map(auguments.cutmix_batch, num_parallel_calls=tf.data.AUTOTUNE)
+        .unbatch()
     )
 
     return sat_map_cum

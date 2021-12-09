@@ -3,11 +3,23 @@ set -euxo pipefail
 cd "$(dirname "$0")"
 
 python3 ./train.py \
-        --datadir '/mass_roads/train' --suffix 'png' \
-        --logdir 'cmF-d-E10_MR_basemodel' \
-        --use_dice \
-        --xception \
-        --epochs 10
+        --datadir '/mass_roads/train' --suffix 'png' --dsrate=0.5 \
+        --logdir 'DAF-Focal-E20' \
+        --loss 'Focal' \
+        --epochs 20
+
+#python3 ./train.py \
+#        --datadir '/mass_roads/train' --suffix 'png' --dsrate=0.5 \
+#        --logdir 'DAF-BCEDICE-E20' \
+#        --loss 'BCEwithDICE' \
+#        --epochs 20
+#
+#
+#python3 ./train.py \
+#        --datadir '/mass_roads/train' --suffix 'png' --dsrate=0.5 \
+#        --logdir 'DAF-Tversky0.7-E20' \
+#        --loss 'Tversky' \
+#        --epochs 20
 
 #python3 ./train.py \
 #        --datadir '/mass_roads/train' --suffix 'png' \

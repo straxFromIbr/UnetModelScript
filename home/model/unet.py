@@ -1,7 +1,6 @@
 import tensorflow.keras as keras
 from tensorflow.keras import layers
 
-
 from . import utils
 
 
@@ -69,16 +68,19 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
     # initializer = tf.random_normal_initializer(0.0, 0.02)
     x = inputs
 
+    l = 2
     # Downsampling through the model
     down_stack = [
-        utils.downsample(64, 4, apply_batchnorm=False),  # (batch_size, 128, 128, 64)
-        utils.downsample(128, 4),  # (batch_size, 64, 64, 128)
-        utils.downsample(256, 4),  # (batch_size, 32, 32, 256)
-        utils.downsample(512, 4),  # (batch_size, 16, 16, 512)
-        utils.downsample(512, 4),  # (batch_size, 8, 8, 512)
-        utils.downsample(512, 4),  # (batch_size, 4, 4, 512)
-        utils.downsample(512, 4),  # (batch_size, 2, 2, 512)
-        utils.downsample(512, 4),  # (batch_size, 1, 1, 512)
+        utils.downsample(
+            64 // l, 4, apply_batchnorm=False
+        ),  # (batch_size, 128, 128, 64)
+        utils.downsample(128 // l, 4),  # (batch_size, 64, 64, 128)
+        utils.downsample(256 // l, 4),  # (batch_size, 32, 32, 256)
+        utils.downsample(512 // l, 4),  # (batch_size, 16, 16, 512)
+        utils.downsample(512 // l, 4),  # (batch_size, 8, 8, 512)
+        utils.downsample(512 // l, 4),  # (batch_size, 4, 4, 512)
+        utils.downsample(512 // l, 4),  # (batch_size, 2, 2, 512)
+        utils.downsample(512 // l, 4),  # (batch_size, 1, 1, 512)
     ]
     skips = []
     for down in down_stack:
@@ -89,13 +91,13 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
 
     # Upsampling and establishing the skip connections
     up_stack = [
-        utils.upsample(512, 4, apply_dropout=True),  # (batch_size, 2, 2, 1024)
-        utils.upsample(512, 4, apply_dropout=True),  # (batch_size, 4, 4, 1024)
-        utils.upsample(512, 4, apply_dropout=True),  # (batch_size, 8, 8, 1024)
-        utils.upsample(512, 4),  # (batch_size, 16, 16, 1024)
-        utils.upsample(256, 4),  # (batch_size, 32, 32, 512)
-        utils.upsample(128, 4),  # (batch_size, 64, 64, 256)
-        utils.upsample(64, 4),  # (batch_size, 128, 128, 128)
+        utils.upsample(512 // l, 4, apply_dropout=True),  # (batch_size, 2, 2, 1024)
+        utils.upsample(512 // l, 4, apply_dropout=True),  # (batch_size, 4, 4, 1024)
+        utils.upsample(512 // l, 4, apply_dropout=True),  # (batch_size, 8, 8, 1024)
+        utils.upsample(512 // l, 4),  # (batch_size, 16, 16, 1024)
+        utils.upsample(256 // l, 4),  # (batch_size, 32, 32, 512)
+        utils.upsample(128 // l, 4),  # (batch_size, 64, 64, 256)
+        utils.upsample(64 // l, 4),  # (batch_size, 128, 128, 128)
     ]
 
     for up, skip in zip(up_stack, skips):

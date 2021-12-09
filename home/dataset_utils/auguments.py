@@ -14,28 +14,22 @@ def sample_beta_distribution(size, concentration_0=0.2, concentration_1=0.2):
 
 # @tf.function
 def mixed_img(image1, image2, *bbox):
+    # fmt:off
     boundary_x1, boundary_y1, target_h, target_w = bbox
     # image2からパッチを切り出す
-    crop2 = tf.image.crop_to_bounding_box(
-        image2, boundary_y1, boundary_x1, target_h, target_w
-    )
+    crop2 = tf.image.crop_to_bounding_box( image2, boundary_y1, boundary_x1, target_h, target_w)
     # crop2のオフセットでパディング
-    image2 = tf.image.pad_to_bounding_box(
-        crop2, boundary_y1, boundary_x1, config.IMG_SIZE, config.IMG_SIZE
-    )
+    image2 = tf.image.pad_to_bounding_box( crop2, boundary_y1, boundary_x1, config.IMG_SIZE, config.IMG_SIZE)
 
     # image1からパッチを切り出す
-    crop1 = tf.image.crop_to_bounding_box(
-        image1, boundary_y1, boundary_x1, target_h, target_w
-    )
+    crop1 = tf.image.crop_to_bounding_box( image1, boundary_y1, boundary_x1, target_h, target_w)
     # crop1のオフセットでパディング
-    image1_pad = tf.image.pad_to_bounding_box(
-        crop1, boundary_y1, boundary_x1, config.IMG_SIZE, config.IMG_SIZE
-    )
+    image1_pad = tf.image.pad_to_bounding_box( crop1, boundary_y1, boundary_x1, config.IMG_SIZE, config.IMG_SIZE)
 
     image1 = image1 - image1_pad
     image = image1 + image2
     return image
+    # fmt:on
 
 
 @tf.function
@@ -77,13 +71,6 @@ def cutmix(*ds):
         (ip_image2, tar_image2),
         (ip_image2, tar_image2),
     ) = ds
-    print(ip_image1.shape)
-    print(type(ds[0]))
-    print(type(ds[0][0]))
-
-    # print(len(train_ds_one))
-    # print(type(train_ds_one))
-
     alpha = [0.25]
     beta = [0.25]
 
@@ -161,30 +148,22 @@ def cutmix_batch(*ds):
 
 
 class Augment(keras.layers.Layer):
-    def __init__(self, seed=42):
+    def __init__(self, zoom: bool, flip: bool, rotate: bool, seed=42):
         super().__init__()
+        self.augment_inputs = keras.Sequential()
+        self.augment_labels = keras.Sequential()
 
-        # both use the same seed, so they'll make the same random changes.
-        self.augment_inputs = keras.Sequential(
-            [
-                preprocessing.RandomFlip("horizontal_and_vertical", seed=seed),
-                preprocessing.RandomRotation(0.1, seed=seed),
-                preprocessing.RandomZoom(0.1, seed=seed),
-            ]
-        )
-        self.augment_labels = keras.Sequential(
-            [
-                preprocessing.RandomFlip("horizontal_and_vertical", seed=seed),
-                preprocessing.RandomRotation(0.1, seed=seed),
-                preprocessing.RandomZoom(0.1, seed=seed),
-            ]
-        )
-        # self.augment_inputs = preprocessing.RandomFlip(
-        #     mode="horizontal_and_vertical", seed=seed
-        # )
-        # self.augment_labels = preprocessing.RandomFlip(
-        #     mode="horizontal_and_vertical", seed=seed
-        # )
+        # fmt:off
+        if zoom:
+            self.augment_inputs.add(preprocessing.RandomZoom((-0.2, 0.2), seed=seed))
+            self.augment_labels.add(preprocessing.RandomZoom((-0.2, 0.2), seed=seed))
+        if flip:
+            self.augment_inputs.add( preprocessing.RandomFlip("horizontal_and_vertical", seed=seed))
+            self.augment_labels.add( preprocessing.RandomFlip("horizontal_and_vertical", seed=seed))
+        if rotate:
+            self.augment_inputs.add( preprocessing.RandomRotation((-0.5, 0.5), seed=seed))
+            self.augment_labels.add( preprocessing.RandomRotation((-0.5, 0.5), seed=seed))
+        # fmt:on
 
     def call(self, inputs, labels):
         inputs = self.augment_inputs(inputs)

@@ -11,6 +11,7 @@ services:
       - "../dataset:/dataset"
     environment:
       - SHELL=/bin/bash
+      - TF_CPP_MIN_LOG_LEVEL=2
     image: straxfromibr/jupyterlab_tf
     deploy:
       resources:

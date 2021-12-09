@@ -2,8 +2,8 @@ import tensorflow as tf
 import tensorflow.keras as keras
 
 """
-参考：https://qiita.com/ppza53893/items/8090322792e1c7f81e57
-# 変更点：
+参考: https://qiita.com/ppza53893/items/8090322792e1c7f81e57
+# 変更点:
     - パラメータ調整を容易にするためにクラスで実装
     - バックエンドとしてTF以外を想定しないため、tf.mathの関数を直接使用
 """
@@ -28,6 +28,28 @@ class DICELoss(keras.losses.Loss):
         ptsum = tf.math.reduce_sum(y_true_pos + y_pred_pos)
         dc = (2.0 * tp + self.smooth) / (ptsum + self.smooth)
         return 1.0 - dc
+
+
+class BCEwithDICELoss(keras.losses.Loss):
+    """
+    CRESI論文に沿って、
+    0.8 * BCE + 0.2 * (1-DICE)
+    でやってみる
+    """
+
+    def __init__(self, name=None):
+        super().__init__(name=name)
+        self.bce = keras.losses.BinaryCrossentropy(from_logits=True)
+        self.dice = DICELoss(name="DICE")
+
+    def call(self, y_true, y_pred):
+        bce_loss = self.bce.call(y_true, y_pred)
+        dice_loss = self.dice.call(y_true, y_pred)
+        loss_value = tf.add(
+            tf.multiply(0.8, bce_loss),
+            tf.multiply(0.2, tf.add(1.0, tf.multiply(-1.0, dice_loss))),
+        )
+        return loss_value
 
 
 class TverskyLoss(keras.losses.Loss):
