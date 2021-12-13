@@ -57,8 +57,7 @@ def mkds(
     )
     if aug:
         sat_map = sat_map.map(
-            auguments.Augment(zoom=zoom, flip=flip, rotate=rotate),
-            num_parallel_calls=tf.data.AUTOTUNE,
+            auguments.Augment(zoom=zoom, flip=flip, rotate=rotate)
         )
     sat_map = sat_map.prefetch(tf.data.AUTOTUNE)
     return sat_map
@@ -160,7 +159,16 @@ def main(**args):
     # fmt:off
     tr_sat_pathlist = sorted([str(ds_root / "sat" / path) for path in tr_pathlist])
     tr_map_pathlist = sorted([str(ds_root / "map" / path) for path in tr_pathlist])
-    train_ds = mkds(tr_sat_pathlist, tr_map_pathlist, batch_size=config.BATCH_SIZE, eq=args["eq"], aug=args["augment"])
+    train_ds = mkds(
+        tr_sat_pathlist, 
+        tr_map_pathlist, 
+        batch_size=config.BATCH_SIZE, 
+        eq=args["eq"], 
+        aug=args["augment"],
+        zoom=args["zoom"],
+        flip=args["flip"],
+        rotate=args["rotate"],
+    )
 
     va_sat_pathlist = sorted([str(ds_root / "sat" / path) for path in va_pathlist])
     va_map_pathlist = sorted([str(ds_root / "map" / path) for path in va_pathlist])
