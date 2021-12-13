@@ -6,7 +6,6 @@ import math
 
 import tensorflow as tf
 import tensorflow.keras as keras
-from tensorflow.python.keras.utils.generic_utils import default
 
 import config
 from dataset_utils import preprocess, auguments
@@ -18,28 +17,38 @@ def mkds(
     sat_path_list: List[str],
     map_path_list: List[str],
     batch_size: int,
+    eq: bool = False,
     aug: bool = False,
     zoom: bool = True,
     flip: bool = True,
     rotate: bool = True,
+    test: bool = False,
 ):
 
+    base_load_image = functools.partial(
+        preprocess.load_image, height=config.IMG_HEIGHT, width=config.IMG_WIDTH
+    )
+
     # 衛星画像のデータセット
-    image_loader_rgb = functools.partial(preprocess.load_image, channels=3)
+    load_image_rgb = functools.partial(base_load_image, channels=3, eq=eq)
     sat_path_list_ds = tf.data.Dataset.list_files(sat_path_list, shuffle=False)
     sat_dataset = sat_path_list_ds.map(
-        image_loader_rgb, num_parallel_calls=tf.data.AUTOTUNE
+        load_image_rgb, num_parallel_calls=tf.data.AUTOTUNE
     )
 
     # 地図のデータセット
-    image_loader_gry = functools.partial(preprocess.load_image, channels=1)
+    load_image_gray = functools.partial(base_load_image, channels=1)
     map_path_list_ds = tf.data.Dataset.list_files(map_path_list, shuffle=False)
     map_dataset = map_path_list_ds.map(
-        image_loader_gry, num_parallel_calls=tf.data.AUTOTUNE
+        load_image_gray, num_parallel_calls=tf.data.AUTOTUNE
     )
 
     # Zipして、batchしてaugmentする。並列処理とprefetch。
     # cacheはメモリ不足に陥るので適用しない
+    if test:
+        sat_map = tf.data.Dataset.zip((sat_dataset, map_dataset)).batch(batch_size)
+        return sat_map
+
     sat_map = (
         tf.data.Dataset.zip((sat_dataset, map_dataset))
         .shuffle(config.BUFFER_SIZE)
@@ -103,6 +112,7 @@ def getargs():
     parser.add_argument("--dsrate", help="データセットを使う割合", type=float, default=1.0)
 
     # *前処理設定
+    parser.add_argument("--eq", help="ヒストグラム正規化", action="store_true")
     parser.add_argument("--use_cutmix", help="Cutmixを使う？", action="store_true")
     parser.add_argument("--nbmix", help="CutMix数", type=int, default=3)
     parser.add_argument("--augment", help="前処理",  action="store_true")
@@ -136,7 +146,7 @@ def main(**args):
     # * 訓練用と検証用に分割
 
     nb_tr = int(len(pathlist) * 0.8 * args["dsrate"])
-    nb_va = int(len(pathlist) * 0.2 * args["dsrate"])
+    nb_va = int(len(pathlist) * 0.2)
     tr_pathlist = pathlist[:nb_tr]
     va_pathlist = pathlist[nb_tr : nb_tr + nb_va]
 
@@ -150,11 +160,11 @@ def main(**args):
     # fmt:off
     tr_sat_pathlist = sorted([str(ds_root / "sat" / path) for path in tr_pathlist])
     tr_map_pathlist = sorted([str(ds_root / "map" / path) for path in tr_pathlist])
-    train_ds = mkds(tr_sat_pathlist, tr_map_pathlist, batch_size=config.BATCH_SIZE, aug=args["augment"])
+    train_ds = mkds(tr_sat_pathlist, tr_map_pathlist, batch_size=config.BATCH_SIZE, eq=args["eq"], aug=args["augment"])
 
     va_sat_pathlist = sorted([str(ds_root / "sat" / path) for path in va_pathlist])
     va_map_pathlist = sorted([str(ds_root / "map" / path) for path in va_pathlist])
-    valid_ds = mkds(va_sat_pathlist, va_map_pathlist, batch_size=config.BATCH_SIZE)
+    valid_ds = mkds(va_sat_pathlist, va_map_pathlist, batch_size=config.BATCH_SIZE, eq=args["eq"])
     # fmt:on
 
     # * 損失関数を設定
