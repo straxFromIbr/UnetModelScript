@@ -148,21 +148,26 @@ def cutmix_batch(*ds):
 
 
 class Augment(keras.layers.Layer):
-    def __init__(self, zoom: bool, flip: bool, rotate: bool, seed=42):
+    def __init__(self, zoom: bool, flip: bool, rotate: bool):
         super().__init__()
+
+        seed_z = 123
+        seed_f = 345
+        seed_r = 234
+
         self.augment_inputs = keras.Sequential()
         self.augment_labels = keras.Sequential()
 
         # fmt:off
         if zoom:
-            self.augment_inputs.add(preprocessing.RandomZoom((-0.2, 0.2), seed=seed))
-            self.augment_labels.add(preprocessing.RandomZoom((-0.2, 0.2), seed=seed))
+            self.augment_inputs.add(preprocessing.RandomZoom(0.2, seed=seed_z))
+            self.augment_labels.add(preprocessing.RandomZoom(0.2, seed=seed_z))
         if flip:
-            self.augment_inputs.add( preprocessing.RandomFlip("horizontal_and_vertical", seed=seed))
-            self.augment_labels.add( preprocessing.RandomFlip("horizontal_and_vertical", seed=seed))
+            self.augment_inputs.add(preprocessing.RandomFlip("horizontal_and_vertical", seed=seed_f))
+            self.augment_labels.add(preprocessing.RandomFlip("horizontal_and_vertical", seed=seed_f))
         if rotate:
-            self.augment_inputs.add( preprocessing.RandomRotation((-0.5, 0.5), seed=seed))
-            self.augment_labels.add( preprocessing.RandomRotation((-0.5, 0.5), seed=seed))
+            self.augment_inputs.add(preprocessing.RandomRotation(0.5, seed=seed_r))
+            self.augment_labels.add(preprocessing.RandomRotation(0.5, seed=seed_r))
         # fmt:on
 
     def call(self, inputs, labels):
