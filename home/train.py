@@ -1,30 +1,21 @@
-from typing import List
 import functools
+import logging
+import math
 import pathlib
 import random
-import math
+from typing import List
 
 import tensorflow as tf
 import tensorflow.keras as keras
 
 import config
-from dataset_utils import preprocess, auguments
+from dataset_utils import auguments, preprocess
 from model import losses, unet
 from utils import callbacks
 
 
-def mkds(
-    sat_path_list: List[str],
-    map_path_list: List[str],
-    batch_size: int,
-    eq: bool = False,
-    aug: bool = False,
-    zoom: bool = True,
-    flip: bool = True,
-    rotate: bool = True,
-    test: bool = False,
-):
-
+def mk_baseds(sat_path_list: List[str], map_path_list: List[str], eq: bool):
+    logging.info(f"eq: {eq}")
     base_load_image = functools.partial(
         preprocess.load_image, height=config.IMG_HEIGHT, width=config.IMG_WIDTH
     )
@@ -43,24 +34,66 @@ def mkds(
         load_image_gray, num_parallel_calls=tf.data.AUTOTUNE
     )
 
-    # Zipして、batchしてaugmentする。並列処理とprefetch。
-    # cacheはメモリ不足に陥るので適用しない
-    if test:
-        sat_map = tf.data.Dataset.zip((sat_dataset, map_dataset)).batch(batch_size)
-        return sat_map
+    sat_map_ds = tf.data.Dataset.zip((sat_dataset, map_dataset))
+    return sat_map_ds
 
-    sat_map = (
-        tf.data.Dataset.zip((sat_dataset, map_dataset))
-        .shuffle(config.BUFFER_SIZE)
-        .repeat()
-        .batch(batch_size)
+
+def apply_da(
+    batch_sat_map_ds: tf.data.Dataset,
+    zoom: bool = True,
+    flip: bool = True,
+    rotate: bool = True,
+):
+    batch_sat_map_ds = batch_sat_map_ds.map(
+        auguments.Augment(zoom=zoom, flip=flip, rotate=rotate),
+        num_parallel_calls=tf.data.AUTOTUNE,
+        deterministic=True,
     )
-    if aug:
-        sat_map = sat_map.map(
-            auguments.Augment(zoom=zoom, flip=flip, rotate=rotate)
-        )
-    sat_map = sat_map.prefetch(tf.data.AUTOTUNE)
+    logging.info(f"zoom: {zoom}, flip: {flip}, rotate: {rotate}")
+    return batch_sat_map_ds
+
+
+def apply_cutmix(sat_map_ds: tf.data.Dataset, nbmix: int):
+    # CutMixを適用する。nbmixでbatch, cutmix適用, unbatch.
+    # ここが処理のボトルネックになりそう
+    logging.info(f"cutmix: {nbmix}")
+    sat_map_ds = sat_map_ds.batch(nbmix).map(auguments.cutmix_batch).unbatch()
+    return sat_map_ds
+
+
+def mk_testds(sat_map: tf.data.Dataset, batch_size: int):
+    sat_map = sat_map.batch(batch_size).repeat().prefetch(tf.data.AUTOTUNE)
     return sat_map
+
+
+def mkds(
+    sat_path_list: List[str],
+    map_path_list: List[str],
+    batch_size: int,
+    eq: bool = False,
+    aug: bool = False,
+    zoom: bool = True,
+    flip: bool = True,
+    rotate: bool = True,
+    cutmix: bool = False,
+    nbmix: int = 2,
+    test: bool = False,
+):
+    sat_map_ds = mk_baseds(sat_path_list, map_path_list, eq)
+    if test:
+        return mk_testds(sat_map_ds, batch_size)
+
+    if cutmix and aug:
+        sat_map_ds = apply_cutmix(sat_map_ds, nbmix)
+
+    batch_sat_map_ds = sat_map_ds.batch(batch_size)
+    logging.info(f"batch_size: {batch_size}")
+    if aug:
+        # fmt:off
+        batch_sat_map_ds = apply_da(batch_sat_map_ds, zoom=zoom, flip=flip, rotate=rotate)
+        # fmt:on
+
+    return batch_sat_map_ds.prefetch(tf.data.AUTOTUNE)
 
 
 # Define model
@@ -137,17 +170,17 @@ def getargs():
 def main(**args):
     # * パスのリストを作る
     random.seed(1)
-    pathlist = pathlib.Path(args["datadir"]).glob(f"**/*.{args['suffix']}")
+    pathlist = (pathlib.Path(args["datadir"]) / "map").glob(f"*.{args['suffix']}")
     pathlist = sorted([path.name for path in pathlist])
     random.shuffle(pathlist)
-    print(pathlist[:10])
 
     # * 訓練用と検証用に分割
-
     nb_tr = int(len(pathlist) * 0.8 * args["dsrate"])
     nb_va = int(len(pathlist) * 0.2)
     tr_pathlist = pathlist[:nb_tr]
     va_pathlist = pathlist[nb_tr : nb_tr + nb_va]
+    logging.info(f"nb_tr: {nb_tr}")
+    logging.info(f"nb_va: {nb_va}")
 
     # * ステップ数を決める
     steps_per_epoch = math.ceil(nb_tr / config.BATCH_SIZE)
@@ -168,24 +201,28 @@ def main(**args):
         zoom=args["zoom"],
         flip=args["flip"],
         rotate=args["rotate"],
+        cutmix=args["use_cutmix"],
+        nbmix=args["nbmix"],
     )
 
     va_sat_pathlist = sorted([str(ds_root / "sat" / path) for path in va_pathlist])
     va_map_pathlist = sorted([str(ds_root / "map" / path) for path in va_pathlist])
-    valid_ds = mkds(va_sat_pathlist, va_map_pathlist, batch_size=config.BATCH_SIZE, eq=args["eq"])
+    valid_ds = mkds(va_sat_pathlist, va_map_pathlist, batch_size=config.BATCH_SIZE, test=True, eq=args["eq"])
     # fmt:on
 
     # * 損失関数を設定
-    loss = args["loss"]
-
     # * モデルコンパイル
+    loss = args["loss"]
     model = compile_model(loss=loss, xception=args["xception"])
 
     # * 学習済み重みをロード
     if args["pretrained"] is not None:
         if not pathlib.Path(args["pretrained"]).parent.exists():
-            raise FileNotFoundError(f"{args['pretrained']} not found.")
+            _msg = f"{args['pretrained']} not found."
+            logging.error(_msg)
+            raise FileNotFoundError(_msg)
         ret = model.load_weights(args["pretrained"])
+        logging.info(f'{args["pretrained"]}, {ret}')
 
     # * 訓練ループ
     model_history = model.fit(
@@ -196,6 +233,8 @@ def main(**args):
         validation_steps=va_steps,
         callbacks=get_callbacks(args["logdir"]),
     )
+    logging.info(f"model: {model}")
+    logging.info(f"hist : {model_history}")
     return model, model_history
 
 
@@ -203,5 +242,15 @@ if __name__ == "__main__":
     import argparse
 
     args = getargs()
+
+    exec_log_dir = config.RES_BASE / "exec_log"
+    exec_log_dir.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s:%(message)s",
+        level=logging.INFO,
+        datefmt="%m/%d/%Y %I:%M:%S",
+        filename=f"{str(exec_log_dir/args.logdir)}.log",
+    )
+
     # * NameSpaceをKWArgsにする
     main(**vars(args))
