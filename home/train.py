@@ -46,8 +46,8 @@ def apply_da(
 ):
     batch_sat_map_ds = batch_sat_map_ds.map(
         auguments.Augment(zoom=zoom, flip=flip, rotate=rotate),
-        num_parallel_calls=tf.data.AUTOTUNE,
-        deterministic=True,
+        # num_parallel_calls=tf.data.AUTOTUNE,
+        # deterministic=True,
     )
     logging.info(f"zoom: {zoom}, flip: {flip}, rotate: {rotate}")
     return batch_sat_map_ds
@@ -62,7 +62,7 @@ def apply_cutmix(sat_map_ds: tf.data.Dataset, nbmix: int):
 
 
 def mk_testds(sat_map: tf.data.Dataset, batch_size: int):
-    sat_map = sat_map.batch(batch_size).repeat().prefetch(tf.data.AUTOTUNE)
+    sat_map = sat_map.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     return sat_map
 
 
@@ -86,14 +86,14 @@ def mkds(
     if cutmix and aug:
         sat_map_ds = apply_cutmix(sat_map_ds, nbmix)
 
-    batch_sat_map_ds = sat_map_ds.batch(batch_size)
+    batch_sat_map_ds = sat_map_ds.shuffle(config.BUFFER_SIZE).batch(batch_size)
     logging.info(f"batch_size: {batch_size}")
     if aug:
         # fmt:off
         batch_sat_map_ds = apply_da(batch_sat_map_ds, zoom=zoom, flip=flip, rotate=rotate)
         # fmt:on
 
-    return batch_sat_map_ds.prefetch(tf.data.AUTOTUNE)
+    return batch_sat_map_ds.repeat().prefetch(tf.data.AUTOTUNE)
 
 
 # Define model
@@ -115,9 +115,8 @@ def compile_model(loss, xception=False):
 # Define Callbacks
 def get_callbacks(filename):
     tboard_cb = callbacks.get_tboard_callback(str(config.LOG_PATH / filename))
-    checkpoint_path = str(
-        config.CHECKPOINT_PATH / filename / filename
-    )  # + "_{epoch:03d}"
+    checkpoint_path = str(config.CHECKPOINT_PATH / filename / filename) + "_{epoch:03d}"
+
     checkpoint_cb = callbacks.get_checkpoint_callback(checkpoint_path)
     callback_list = [tboard_cb, checkpoint_cb]
     return callback_list
