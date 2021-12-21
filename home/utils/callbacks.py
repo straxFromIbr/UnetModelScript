@@ -38,9 +38,9 @@ def get_checkpoint_callback(checkpoint_dir):
     # チェックポイントコールバックを作る
     cp_callback = keras.callbacks.ModelCheckpoint(
         checkpoint_dir,
-        # save_freq=1,
+        period=5,
         save_weights_only=True,
-        save_best_only=True,
+        # save_best_only=True,
         # verbose=1,
     )
     return cp_callback
