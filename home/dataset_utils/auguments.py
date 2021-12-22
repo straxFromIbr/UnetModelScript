@@ -154,7 +154,15 @@ def cutmix_batch(*ds):
 
 
 class Augment(keras.layers.Layer):
-    def __init__(self, zoom: bool, flip: bool, rotate: bool):
+    def __init__(
+        self,
+        zoom: bool,
+        flip: bool,
+        rotate: bool,
+        zoom_rate: float = 0.4,
+        flip_mode: str = "horizontal_and_vertical",
+        rotate_rate: float = 0.5,
+    ):
         super().__init__()
 
         seed_z = 123
@@ -166,18 +174,14 @@ class Augment(keras.layers.Layer):
 
         # fmt:off
         if zoom:
-            self.augment_inputs.add(preprocessing.RandomZoom(0.4, seed=seed_z))
-            self.augment_labels.add(preprocessing.RandomZoom(0.4, seed=seed_z))
+            self.augment_inputs.add(preprocessing.RandomZoom(zoom_rate, seed=seed_z))
+            self.augment_labels.add(preprocessing.RandomZoom(zoom_rate, seed=seed_z))
         if flip:
-            self.augment_inputs.add(preprocessing.RandomFlip(
-                "horizontal_and_vertical", seed=seed_f))
-            self.augment_labels.add(preprocessing.RandomFlip(
-                "horizontal_and_vertical", seed=seed_f))
+            self.augment_inputs.add(preprocessing.RandomFlip(flip_mode, seed=seed_f))
+            self.augment_labels.add(preprocessing.RandomFlip(flip_mode, seed=seed_f))
         if rotate:
-            self.augment_inputs.add(
-                preprocessing.RandomRotation(0.5, seed=seed_r))
-            self.augment_labels.add(
-                preprocessing.RandomRotation(0.5, seed=seed_r))
+            self.augment_inputs.add(preprocessing.RandomRotation(rotate_rate, seed=seed_r))
+            self.augment_labels.add(preprocessing.RandomRotation(rotate_rate, seed=seed_r))
         # fmt:on
 
     def call(self, inputs, labels):
