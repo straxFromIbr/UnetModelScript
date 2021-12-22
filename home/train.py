@@ -97,9 +97,17 @@ def mkds(
 
 
 # Define model
-def compile_model(loss, xception=False):
+def compile_model(
+    loss,
+    freeze_enc=False,
+    freeze_dec=False,
+    xception=False,
+):
     model = unet.big_unet_model(
-        input_shape=config.INPUT_SIZE, output_channels=config.OUT_CH
+        input_shape=config.INPUT_SIZE,
+        output_channels=config.OUT_CH,
+        freeze_enc=freeze_enc,
+        freeze_dec=freeze_dec,
     )
     if xception:
         del model
@@ -130,6 +138,8 @@ def getargs():
     # *モデル設定
     parser.add_argument("--xception", help="Xception", action="store_true", default=False)
     parser.add_argument("--pretrained", help="事前学習済みのモデル", type=str, required=False)
+    parser.add_argument("--freeze_enc", help="エンコーダ部分を凍結", action="store_true", default=False)
+    parser.add_argument("--freeze_dec", help="デコーダ部分を凍結", action="store_true", default=False)
 
     # *損失関数・学習の設定
     parser.add_argument("--loss",help='損失関数', choices=["DICE", "BCEwithDICE", "Tversky", "Focal"], default="DICE")

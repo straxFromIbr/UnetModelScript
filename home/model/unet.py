@@ -62,7 +62,9 @@ def xception_unet(img_size, num_classes):
     return model
 
 
-def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
+def big_unet_model(
+    input_shape=(256, 256, 3), output_channels=1, freeze_enc=False, freeze_dec=False
+):
     inputs = keras.layers.Input(shape=input_shape, name="input")
 
     # initializer = tf.random_normal_initializer(0.0, 0.02)
@@ -82,6 +84,10 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
         utils.downsample(512 // l, 4),  # (batch_size, 2, 2, 512)
         utils.downsample(512 // l, 4),  # (batch_size, 1, 1, 512)
     ]
+    if freeze_enc:
+        for down in down_stack:
+            down.trainable = False
+
     skips = []
     for down in down_stack:
         x = down(x)
@@ -99,6 +105,10 @@ def big_unet_model(input_shape=(256, 256, 3), output_channels=1):
         utils.upsample(128 // l, 4),  # (batch_size, 64, 64, 256)
         utils.upsample(64 // l, 4),  # (batch_size, 128, 128, 128)
     ]
+
+    if freeze_dec:
+        for up in up_stack:
+            up.trainable = False
 
     for up, skip in zip(up_stack, skips):
         x = up(x)
