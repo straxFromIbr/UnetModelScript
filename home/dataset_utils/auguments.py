@@ -17,14 +17,18 @@ def mixed_img(image1, image2, *bbox):
     # fmt:off
     boundary_x1, boundary_y1, target_h, target_w = bbox
     # image2からパッチを切り出す
-    crop2 = tf.image.crop_to_bounding_box( image2, boundary_y1, boundary_x1, target_h, target_w)
+    crop2 = tf.image.crop_to_bounding_box(
+        image2, boundary_y1, boundary_x1, target_h, target_w)
     # crop2のオフセットでパディング
-    image2 = tf.image.pad_to_bounding_box( crop2, boundary_y1, boundary_x1, config.IMG_SIZE, config.IMG_SIZE)
+    image2 = tf.image.pad_to_bounding_box(
+        crop2, boundary_y1, boundary_x1, config.IMG_SIZE, config.IMG_SIZE)
 
     # image1からパッチを切り出す
-    crop1 = tf.image.crop_to_bounding_box( image1, boundary_y1, boundary_x1, target_h, target_w)
+    crop1 = tf.image.crop_to_bounding_box(
+        image1, boundary_y1, boundary_x1, target_h, target_w)
     # crop1のオフセットでパディング
-    image1_pad = tf.image.pad_to_bounding_box( crop1, boundary_y1, boundary_x1, config.IMG_SIZE, config.IMG_SIZE)
+    image1_pad = tf.image.pad_to_bounding_box(
+        crop1, boundary_y1, boundary_x1, config.IMG_SIZE, config.IMG_SIZE)
 
     image1 = image1 - image1_pad
     image = image1 + image2
@@ -45,8 +49,10 @@ def get_box(lambda_value):
     cut_h = tf.cast(cut_h, tf.int32)
 
     # rx & ry
-    cut_x = tf.random.uniform((1,), minval=0, maxval=config.IMG_SIZE, dtype=tf.int32)
-    cut_y = tf.random.uniform((1,), minval=0, maxval=config.IMG_SIZE, dtype=tf.int32)
+    cut_x = tf.random.uniform(
+        (1,), minval=0, maxval=config.IMG_SIZE, dtype=tf.int32)
+    cut_y = tf.random.uniform(
+        (1,), minval=0, maxval=config.IMG_SIZE, dtype=tf.int32)
 
     boundary_x1 = tf.clip_by_value(cut_x[0] - cut_w // 2, 0, config.IMG_SIZE)
     boundary_y1 = tf.clip_by_value(cut_y[0] - cut_h // 2, 0, config.IMG_SIZE)
@@ -132,7 +138,7 @@ def cutmix_batch(*ds):
             [
                 res_inp_batch[:base_idx],
                 tf.expand_dims(inp, axis=0),
-                res_inp_batch[base_idx + 1 :],
+                res_inp_batch[base_idx + 1:],
             ],
             axis=0,
         )
@@ -140,7 +146,7 @@ def cutmix_batch(*ds):
             [
                 res_tar_batch[:base_idx],
                 tf.expand_dims(tar, axis=0),
-                res_tar_batch[base_idx + 1 :],
+                res_tar_batch[base_idx + 1:],
             ],
             axis=0,
         )
@@ -160,14 +166,18 @@ class Augment(keras.layers.Layer):
 
         # fmt:off
         if zoom:
-            self.augment_inputs.add(preprocessing.RandomZoom(0.2, seed=seed_z))
-            self.augment_labels.add(preprocessing.RandomZoom(0.2, seed=seed_z))
+            self.augment_inputs.add(preprocessing.RandomZoom(0.4, seed=seed_z))
+            self.augment_labels.add(preprocessing.RandomZoom(0.4, seed=seed_z))
         if flip:
-            self.augment_inputs.add(preprocessing.RandomFlip("horizontal_and_vertical", seed=seed_f))
-            self.augment_labels.add(preprocessing.RandomFlip("horizontal_and_vertical", seed=seed_f))
+            self.augment_inputs.add(preprocessing.RandomFlip(
+                "horizontal_and_vertical", seed=seed_f))
+            self.augment_labels.add(preprocessing.RandomFlip(
+                "horizontal_and_vertical", seed=seed_f))
         if rotate:
-            self.augment_inputs.add(preprocessing.RandomRotation(0.5, seed=seed_r))
-            self.augment_labels.add(preprocessing.RandomRotation(0.5, seed=seed_r))
+            self.augment_inputs.add(
+                preprocessing.RandomRotation(0.5, seed=seed_r))
+            self.augment_labels.add(
+                preprocessing.RandomRotation(0.5, seed=seed_r))
         # fmt:on
 
     def call(self, inputs, labels):

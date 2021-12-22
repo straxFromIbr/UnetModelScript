@@ -183,7 +183,7 @@ def main(**args):
 
     # * ステップ数を決める
     steps_per_epoch = math.ceil(nb_tr / config.BATCH_SIZE)
-    va_steps = math.ceil(nb_va / config.BUFFER_SIZE)
+    va_steps = math.ceil(nb_va / config.BATCH_SIZE)
 
     # * tf.Dataの作成
     ds_root = pathlib.Path(args["datadir"])

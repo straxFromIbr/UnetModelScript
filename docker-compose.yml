@@ -9,9 +9,11 @@ services:
       - "../results:/results"
       - "../mass_roads:/mass_roads"
       - "../dataset:/dataset"
+      - "../tokai_katsuta_ds:/tokai_katsuta_ds"
+      - "../tokai_katsuta_ds_s17:/tokai_katsuta_ds_s17"
     environment:
       - SHELL=/bin/bash
-      - TF_CPP_MIN_LOG_LEVEL=2
+      - TF_CPP_MIN_LOG_LEVEL=3
     image: straxfromibr/jupyterlab_tf
     deploy:
       resources:
