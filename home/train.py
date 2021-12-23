@@ -222,7 +222,12 @@ def main(**args):
     # * 損失関数を設定
     # * モデルコンパイル
     loss = args["loss"]
-    model = compile_model(loss=loss, xception=args["xception"])
+    model = compile_model(
+        loss=loss,
+        xception=args["xception"],
+        freeze_enc=args["freeze_enc"],
+        freeze_dec=args["freeze_dec"],
+    )
 
     # * 学習済み重みをロード
     if args["pretrained"] is not None:
