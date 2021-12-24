@@ -19,7 +19,7 @@ class DICELoss(keras.losses.Loss):
         ゼロ除算対策のためのパラメータ設定
         """
         super().__init__(name=name)
-        self.smooth = 1.0
+        self.smooth = 1e-10
 
     def call(self, y_true, y_pred):
         y_true_pos = tf.reshape(y_true, [-1])
