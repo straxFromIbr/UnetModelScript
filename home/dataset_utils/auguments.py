@@ -1,7 +1,50 @@
+import config
 import tensorflow as tf
 import tensorflow.keras as keras
+from tensorflow.keras import layers
 from tensorflow.keras.layers.experimental import preprocessing
-import config
+
+
+class Augment(layers.Layer):
+    def __init__(
+        self,
+        zoom_rate: float = 0.2,
+        flip_mode: str = "horizontal_and_vertical",
+        rotate_rate: float = 0.2,
+        trans_rate: float = 0.2,
+    ):
+        super().__init__()
+
+        seed = 99
+        interpolation = "nearest"
+
+        # fmt:off
+        self.i_zoom = preprocessing.RandomZoom(zoom_rate, interpolation='bilinear', seed=seed)
+        self.i_flip = preprocessing.RandomFlip(flip_mode, seed=seed)
+        self.i_rotate = preprocessing.RandomRotation(rotate_rate, interpolation=interpolation, seed=seed)
+        self.i_trans = preprocessing.RandomTranslation(trans_rate, trans_rate, interpolation=interpolation, seed=seed)
+        # fmt:on
+        
+        # fmt:off
+        self.t_zoom = preprocessing.RandomZoom(zoom_rate, interpolation='bilinear', seed=seed)
+        self.t_flip = preprocessing.RandomFlip(flip_mode, seed=seed)
+        self.t_rotate = preprocessing.RandomRotation(rotate_rate,  interpolation=interpolation, seed=seed)
+        self.t_trans = preprocessing.RandomTranslation(trans_rate, trans_rate,interpolation=interpolation, seed=seed)
+        # fmt:on
+
+    def call(self, inputs, labels):
+
+        inputs = self.i_zoom(inputs)
+        inputs = self.i_flip(inputs)
+        inputs = self.i_rotate(inputs)
+        inputs = self.i_trans(inputs)
+
+        labels = self.t_zoom(labels)
+        labels = self.t_flip(labels)
+        labels = self.t_rotate(labels)
+        labels = self.t_trans(labels)
+
+        return inputs, labels
 
 
 def sample_beta_distribution(size, concentration_0=0.2, concentration_1=0.2):
@@ -49,10 +92,8 @@ def get_box(lambda_value):
     cut_h = tf.cast(cut_h, tf.int32)
 
     # rx & ry
-    cut_x = tf.random.uniform(
-        (1,), minval=0, maxval=config.IMG_SIZE, dtype=tf.int32)
-    cut_y = tf.random.uniform(
-        (1,), minval=0, maxval=config.IMG_SIZE, dtype=tf.int32)
+    cut_x = tf.random.uniform((1,), minval=0, maxval=config.IMG_SIZE, dtype=tf.int32)
+    cut_y = tf.random.uniform((1,), minval=0, maxval=config.IMG_SIZE, dtype=tf.int32)
 
     boundary_x1 = tf.clip_by_value(cut_x[0] - cut_w // 2, 0, config.IMG_SIZE)
     boundary_y1 = tf.clip_by_value(cut_y[0] - cut_h // 2, 0, config.IMG_SIZE)
@@ -138,7 +179,7 @@ def cutmix_batch(*ds):
             [
                 res_inp_batch[:base_idx],
                 tf.expand_dims(inp, axis=0),
-                res_inp_batch[base_idx + 1:],
+                res_inp_batch[base_idx + 1 :],
             ],
             axis=0,
         )
@@ -146,45 +187,8 @@ def cutmix_batch(*ds):
             [
                 res_tar_batch[:base_idx],
                 tf.expand_dims(tar, axis=0),
-                res_tar_batch[base_idx + 1:],
+                res_tar_batch[base_idx + 1 :],
             ],
             axis=0,
         )
     return res_inp_batch, res_tar_batch
-
-
-class Augment(keras.layers.Layer):
-    def __init__(
-        self,
-        zoom: bool,
-        flip: bool,
-        rotate: bool,
-        zoom_rate: float = 0.4,
-        flip_mode: str = "horizontal_and_vertical",
-        rotate_rate: float = 0.5,
-    ):
-        super().__init__()
-
-        seed_z = 123
-        seed_f = 345
-        seed_r = 234
-
-        self.augment_inputs = keras.Sequential()
-        self.augment_labels = keras.Sequential()
-
-        # fmt:off
-        if zoom:
-            self.augment_inputs.add(preprocessing.RandomZoom(zoom_rate, seed=seed_z))
-            self.augment_labels.add(preprocessing.RandomZoom(zoom_rate, seed=seed_z))
-        if flip:
-            self.augment_inputs.add(preprocessing.RandomFlip(flip_mode, seed=seed_f))
-            self.augment_labels.add(preprocessing.RandomFlip(flip_mode, seed=seed_f))
-        if rotate:
-            self.augment_inputs.add(preprocessing.RandomRotation(rotate_rate, seed=seed_r))
-            self.augment_labels.add(preprocessing.RandomRotation(rotate_rate, seed=seed_r))
-        # fmt:on
-
-    def call(self, inputs, labels):
-        inputs = self.augment_inputs(inputs)
-        labels = self.augment_labels(labels)
-        return inputs, labels
