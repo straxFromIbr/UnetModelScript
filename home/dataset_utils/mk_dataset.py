@@ -5,27 +5,33 @@ import pathlib
 import random
 from typing import List, Optional
 
-import config
 import tensorflow as tf
 import tensorflow.keras as keras
 
-from . import auguments, preprocess
+from . import auguments
+
+
+def load_image(path, channels):
+    # ファイルから読み込み
+    image_f = tf.io.read_file(path)
+    # Tensorに変換
+    image_jpeg = tf.image.decode_jpeg(image_f, channels=channels)
+    # 正規化([0,1])
+    normalizer = tf.constant(255.0, dtype=tf.float32)
+    image = tf.cast(image_jpeg, tf.float32) / normalizer
+    return image
 
 
 def mk_baseds(sat_path_list: List[str], map_path_list: List[str]):
-    base_load_image = functools.partial(
-        preprocess.load_image, height=config.IMG_HEIGHT, width=config.IMG_WIDTH
-    )
-
     # 衛星画像のデータセット
-    load_image_rgb = functools.partial(base_load_image, channels=3)
+    load_image_rgb = functools.partial(load_image, channels=3)
     sat_path_list_ds = tf.data.Dataset.list_files(sat_path_list, shuffle=False)
     sat_dataset = sat_path_list_ds.map(
         load_image_rgb, num_parallel_calls=tf.data.AUTOTUNE
     )
 
     # 地図のデータセット
-    load_image_gray = functools.partial(base_load_image, channels=1)
+    load_image_gray = functools.partial(load_image, channels=1)
     map_path_list_ds = tf.data.Dataset.list_files(map_path_list, shuffle=False)
     map_dataset = map_path_list_ds.map(
         load_image_gray, num_parallel_calls=tf.data.AUTOTUNE
@@ -51,8 +57,8 @@ def mkds(
     cutmix: bool = False,
     nbmix: int = 2,
     test: bool = False,
+    buffer_size: int = 200,
 ):
-
     sat_map_ds = mk_baseds(sat_path_list, map_path_list)
     logging.info(f"batch_size: {batch_size}")
 
@@ -62,7 +68,7 @@ def mkds(
     if cutmix:
         sat_map_ds = apply_cutmix(sat_map_ds, nbmix)
 
-    batch_sat_map_ds = sat_map_ds.shuffle(config.BUFFER_SIZE).batch(batch_size)
+    batch_sat_map_ds = sat_map_ds.shuffle(buffer_size).batch(batch_size)
 
     if augment is not None:
         logging.info(f"Apply DataAugment: {augment.name}")
@@ -109,20 +115,4 @@ def cutmix_ds(sat_map: tf.data.Dataset, nb_mix: int):
         .map(auguments.cutmix_batch, num_parallel_calls=tf.data.AUTOTUNE)
         .unbatch()
     )
-
     return sat_map_cum
-
-
-def post_process_ds(ds: tf.data.Dataset, batch_size=config.BATCH_SIZE):
-    return ds.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
-
-
-if __name__ == "__main__":
-    pathlist = config.TR_MAP_PATH.glob("*.png")
-    pathlist = [path.name for path in pathlist]
-
-    # tr_ds = mk_base_dataset(
-    #     pathlist, sat_path=config.TR_SAT_PATH, map_path=config.TR_MAP_PATH
-    # )
-    # tr_ds = augument_ds(tr_ds, nb_mix=3)
-    # tr_ds = post_process_ds(tr_ds)
