@@ -11,6 +11,13 @@ import tensorflow.keras as keras
 from . import auguments
 
 
+def resize(input_image, height=256, width=256):
+    input_image = tf.image.resize(
+        input_image, (height, width), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR
+    )
+    return input_image
+
+
 def load_image(path, channels):
     # ファイルから読み込み
     image_f = tf.io.read_file(path)
@@ -19,6 +26,7 @@ def load_image(path, channels):
     # 正規化([0,1])
     normalizer = tf.constant(255.0, dtype=tf.float32)
     image = tf.cast(image_jpeg, tf.float32) / normalizer
+    image = resize(image)
     return image
 
 
