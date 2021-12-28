@@ -12,9 +12,7 @@ from . import auguments
 
 
 def resize(input_image, height=256, width=256):
-    input_image = tf.image.resize(
-        input_image, (height, width), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR
-    )
+    input_image = tf.image.resize(input_image, (height, width), method="nearest")
     return input_image
 
 
@@ -28,6 +26,12 @@ def load_image(path, channels):
     image = tf.cast(image_jpeg, tf.float32) / normalizer
     image = resize(image)
     return image
+
+
+def postprocess_map(sats, maps):
+    # * 画像を0.5を閾値として0 or 1に変換
+    maps = tf.cast(maps > 0.5, dtype=tf.float32)
+    return sats, maps
 
 
 def mk_baseds(sat_path_list: List[str], map_path_list: List[str]):
@@ -71,7 +75,11 @@ def mkds(
     logging.info(f"batch_size: {batch_size}")
 
     if test:
-        return sat_map_ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+        return (
+            sat_map_ds.batch(batch_size)
+            # .map(postprocess_map, num_parallel_calls=tf.data.AUTOTUNE)
+            .prefetch(tf.data.AUTOTUNE)
+        )
 
     if cutmix:
         sat_map_ds = apply_cutmix(sat_map_ds, nbmix)
@@ -82,7 +90,12 @@ def mkds(
         logging.info(f"Apply DataAugment: {augment.name}")
         batch_sat_map_ds = batch_sat_map_ds.map(augment)
 
-    return batch_sat_map_ds.cache().repeat().prefetch(tf.data.AUTOTUNE)
+    return (
+        batch_sat_map_ds.map(postprocess_map, num_parallel_calls=tf.data.AUTOTUNE)
+        .cache()
+        .repeat()
+        .prefetch(tf.data.AUTOTUNE)
+    )
 
 
 def mk_pathlist(
