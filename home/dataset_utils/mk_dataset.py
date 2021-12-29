@@ -77,7 +77,7 @@ def mkds(
     if test:
         return (
             sat_map_ds.batch(batch_size)
-            # .map(postprocess_map, num_parallel_calls=tf.data.AUTOTUNE)
+            .map(postprocess_map, num_parallel_calls=tf.data.AUTOTUNE)
             .prefetch(tf.data.AUTOTUNE)
         )
 
