@@ -17,7 +17,6 @@ class ResidualBlock(keras.layers.Layer):
         self,
         filters,
         name,
-        output_fn=tf.nn.relu,
         kernel=3,
         stride=1,
         apply_dropout=True,
@@ -27,10 +26,13 @@ class ResidualBlock(keras.layers.Layer):
             trainable=trainable,
             name=name,
         )
-        self.pretrained = False
-
-        # * Architecture Configuration
+        # * Layer Configuration
+        self.filters = filters
+        self.kernel = kernel
+        self.stride = stride
         self.apply_dropout = apply_dropout
+
+        self.pretrained = False
 
         # * ShortCut
         self.sc_conv2d = layers.Conv2D(
@@ -58,7 +60,7 @@ class ResidualBlock(keras.layers.Layer):
 
         # * Second Conv Block
         self.bn2 = layers.BatchNormalization(name=name + "_2_bn")
-        self.actv2 = layers.Activation(output_fn, name=name + "_2_actv")
+        self.actv2 = layers.Activation(tf.nn.relu, name=name + "_2_actv")
         self.dropout2 = layers.Dropout(0.2, name=name + "_2_dropout")
         self.conv2d2 = base_conv2d(name=name + "_2_conv")
 
@@ -104,8 +106,14 @@ class ResidualBlock(keras.layers.Layer):
 
     def get_config(self):
         config = super().get_config()
-
-        config.update({"apply_dropout": self.apply_dropout})
+        config.update(
+            {
+                "filters": self.filters,
+                "kernel": self.kernel,
+                "stride": self.stride,
+                "apply_dropout": self.apply_dropout,
+            }
+        )
         return config
 
 
@@ -130,6 +138,10 @@ class ParallelDilatedConvBlock(keras.layers.Layer):
         super().__init__(
             trainable=trainable, name=name, dtype=dtype, dynamic=dynamic, **kwargs
         )
+
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.num_conv = num_conv
         self.bottleneck = bottleneck
 
         self.bottleneck_list = []
@@ -138,7 +150,7 @@ class ParallelDilatedConvBlock(keras.layers.Layer):
         for d in range(num_conv):
             drate = 2 ** d
 
-            bottleneck_layer = layers.Conv2D(1, 1, name=f"_bnconv{d}")
+            bottleneck_layer = layers.Conv2D(1, 1, name=name + f"_bnconv{d}")
             self.bottleneck_list.append(bottleneck_layer)
 
             conv_layer = layers.Conv2D(
@@ -147,11 +159,11 @@ class ParallelDilatedConvBlock(keras.layers.Layer):
                 dilation_rate=drate,
                 padding="same",
                 kernel_initializer="he_normal",
-                name=f"_conv_dl{drate}",
+                name=name + f"_conv_dl{drate}",
             )
             self.conv_list.append(conv_layer)
 
-            add_layer = layers.Add(name=f"_add{d}")
+            add_layer = layers.Add(name=name + f"_add{d}")
             self.add_list.append(add_layer)
 
     def call(self, inputs, *args, **kwargs):
@@ -168,6 +180,19 @@ class ParallelDilatedConvBlock(keras.layers.Layer):
                 x = add([prev_x, x])
             first = False
         return x
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "filters": self.filters,
+                "kernel_size": self.kernel_size,
+                "num_conv": self.num_conv,
+                "bottleneck": self.bottleneck,
+            }
+        )
+
+        return config
 
 
 def last_stack(inputs, n):
@@ -189,6 +214,7 @@ def unet(
     input_shape,
     name,
     nb_layer=4,
+    kernel_size=3,
     initial_channels=32,
     parallel_dilated=False,
     freeze_enc=False,
@@ -208,6 +234,7 @@ def unet(
             apply_dropout=False,
             name=name,
             trainable=not freeze_enc,
+            kernel=kernel_size,
         )
         x = residual_block(x)
         down_stacks.append(x)
@@ -218,20 +245,22 @@ def unet(
     # * ========= Bottom EncDec-Path ==========
     if parallel_dilated:
         # * use parallel dialated module
-        print(2 ** nb_layer * initial_channels)
         bottom_layer = ParallelDilatedConvBlock(
             filters=2 ** nb_layer * initial_channels, name="bottom"
         )
     else:
         # * use normal residual block
-        bottom_layer = ResidualBlock(filters=2 ** nb_layer, name="bottom")
+        bottom_layer = ResidualBlock(
+            filters=2 ** nb_layer,
+            name="bottom",
+            kernel=kernel_size,
+        )
     x = bottom_layer(x)
 
     # * ========== Decoder ==============
     for l, down in zip(range(nb_layer, 0, -1), down_stacks[::-1]):
         name = f"upstack{l}"
         filters = 2 ** l * initial_channels
-        print(filters)
 
         conv_trans = layers.Conv2DTranspose(
             filters / 2, 2, strides=2, name=name + "_transconv"
@@ -239,7 +268,10 @@ def unet(
         x = conv_trans(x)
 
         residual_block = ResidualBlock(
-            filters, name=name + "_res", trainable=not freeze_dec
+            filters,
+            name=name + "_res",
+            trainable=not freeze_dec,
+            kernel=kernel_size,
         )
         x = residual_block(x)
 
@@ -254,13 +286,16 @@ def unet(
 
 
 if __name__ == "__main__":
+    import numpy as np
+
     input_shape = (256, 256, 3)
     model = unet(
-        input_shape,
+        (256, 256, 3),
         nb_layer=4,
         initial_channels=32,
         parallel_dilated=True,
+        kernel_size=5,
         name="unet",
     )
     model.summary()
-    
+    print(model.predict(np.zeros(input_shape)[None]).shape)
