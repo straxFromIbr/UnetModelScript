@@ -26,7 +26,7 @@ class DICELoss(keras.losses.Loss):
         y_pred_pos = tf.reshape(y_pred, [-1])
         tp_mul = tf.math.reduce_sum(y_true_pos * y_pred_pos)
         tp_sum = tf.math.reduce_sum(y_true_pos + y_pred_pos)
-        dc = (tp_mul + self.smooth) / (tp_sum - tp_mul + self.smooth)
+        dc = 2 * (tp_mul + self.smooth) / (tp_sum + self.smooth)
         return 1.0 - dc
 
 
