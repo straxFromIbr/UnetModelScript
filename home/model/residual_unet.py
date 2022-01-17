@@ -245,6 +245,7 @@ def unet(
     # * ========= Bottom EncDec-Path ==========
     if parallel_dilated:
         # * use parallel dialated module
+        print(2 ** nb_layer * initial_channels)
         bottom_layer = ParallelDilatedConvBlock(
             filters=2 ** nb_layer * initial_channels, name="bottom"
         )
@@ -267,6 +268,9 @@ def unet(
         )
         x = conv_trans(x)
 
+        # * Copy and Concat
+        x = layers.Concatenate(name=name + "_concat")((x, down))
+
         residual_block = ResidualBlock(
             filters,
             name=name + "_res",
@@ -275,8 +279,6 @@ def unet(
         )
         x = residual_block(x)
 
-        # * Copy and Concat
-        x = layers.Concatenate(name=name + "_concat")((x, down))
 
     # * Last block
     x = last_stack(x, initial_channels)
@@ -294,7 +296,7 @@ if __name__ == "__main__":
         nb_layer=4,
         initial_channels=32,
         parallel_dilated=True,
-        kernel_size=5,
+        kernel_size=3,
         name="unet",
     )
     model.summary()
