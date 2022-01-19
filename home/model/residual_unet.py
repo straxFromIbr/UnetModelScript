@@ -227,7 +227,7 @@ def unet(
     down_stacks = []
     for l in range(nb_layer):
         name = f"downstack{l}"
-        filters = 2 ** l * initial_channels
+        filters = min(2 ** l * initial_channels, 512)
 
         residual_block = ResidualBlock(
             filters,
@@ -243,16 +243,15 @@ def unet(
         x = max_pool(x)
 
     # * ========= Bottom EncDec-Path ==========
+    filters = min(2 ** nb_layer * initial_channels, 512)
     if parallel_dilated:
         # * use parallel dialated module
-        print(2 ** nb_layer * initial_channels)
-        bottom_layer = ParallelDilatedConvBlock(
-            filters=2 ** nb_layer * initial_channels, name="bottom"
-        )
+        print(filters)
+        bottom_layer = ParallelDilatedConvBlock(filters, name="bottom")
     else:
         # * use normal residual block
         bottom_layer = ResidualBlock(
-            filters=2 ** nb_layer,
+            filters=filters,
             name="bottom",
             kernel=kernel_size,
         )
@@ -261,7 +260,8 @@ def unet(
     # * ========== Decoder ==============
     for l, down in zip(range(nb_layer, 0, -1), down_stacks[::-1]):
         name = f"upstack{l}"
-        filters = 2 ** l * initial_channels
+        # filters = 2 ** l * initial_channels
+        filters = min(2 ** l * initial_channels, 512)
 
         conv_trans = layers.Conv2DTranspose(
             filters / 2, 2, strides=2, name=name + "_transconv"
@@ -278,7 +278,6 @@ def unet(
             kernel=kernel_size,
         )
         x = residual_block(x)
-
 
     # * Last block
     x = last_stack(x, initial_channels)
